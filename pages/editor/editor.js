@@ -1,10 +1,13 @@
 const { getEvents, upsertEvent } = require('../../utils/events')
-const { dateString, timeString, parseClipboard } = require('../../utils/date')
+const { dateString, timeString, displayDate } = require('../../utils/date')
+const { aiParse } = require('../../utils/aiParser')
 
 Page({
   data: {
     editId: '',
     isEdit: false,
+    showPreview: false,
+    showEditForm: false,
     type: 'todo',
     typeOptions: [
       { label: '待办', value: 'todo', desc: '无明确时间' },
@@ -21,7 +24,12 @@ Page({
     reminderIndex: 2,
     source: 'manual',
     originalText: '',
-    loadingClipboard: false
+    loadingClipboard: false,
+    loadingParse: false,
+    // 预览摘要
+    previewTypeLabel: '',
+    previewDateLabel: '',
+    previewTimeLabel: ''
   },
 
   onLoad(options) {
@@ -42,46 +50,102 @@ Page({
     const dl = event.deadline ? new Date(event.deadline) : null
     const reminderIndex = this.data.reminderOptions.indexOf(event.remindBefore ?? 10)
 
+    const d = event.type === 'event' && start ? dateString(start)
+      : event.type === 'deadline' && dl ? dateString(dl) : this.data.date
+    const t = start ? timeString(start) : dl ? timeString(dl) : timeString()
+
     this.setData({
       editId: id,
       isEdit: true,
+      showPreview: true,
       type: event.type || 'event',
       typeIndex: typeIndex >= 0 ? typeIndex : 1,
       title: event.title || '',
-      date: event.type === 'event' && start ? dateString(start) : event.type === 'deadline' && dl ? dateString(dl) : this.data.date,
-      time: start ? timeString(start) : dl ? timeString(dl) : timeString(),
+      date: d,
+      time: t,
       endTime: end ? timeString(end) : timeString(),
       remindBefore: event.remindBefore ?? 10,
       reminderIndex: reminderIndex >= 0 ? reminderIndex : 2,
       source: event.source || 'manual',
       originalText: event.originalText || ''
-    })
+    }, () => this.buildPreview())
   },
 
   readClipboard() {
-    this.setData({ loadingClipboard: true })
+    this.setData({ loadingClipboard: true, loadingParse: true })
     wx.getClipboardData({
-      success: ({ data }) => {
+      success: async ({ data }) => {
         if (!data || !data.trim()) {
           wx.showToast({ title: '剪贴板没有文字', icon: 'none' })
           return
         }
-        const parsed = parseClipboard(data)
-        const typeIndex = this.data.typeOptions.findIndex(o => o.value === parsed.suggestedType)
-        this.setData({
-          title: parsed.title,
-          date: parsed.date,
-          time: parsed.time,
-          type: parsed.suggestedType,
-          typeIndex: typeIndex >= 0 ? typeIndex : 0,
-          source: 'clipboard',
-          originalText: data
-        })
-        wx.showToast({ title: parsed.recognized ? '已识别时间' : '请确认时间', icon: 'success' })
+        const parsed = await aiParse(data)
+        this.applyParse(parsed, { source: 'clipboard', originalText: data })
+        wx.showToast({ title: parsed.recognized ? '已智能解析，请确认' : '未识别时间，请手动填写', icon: parsed.recognized ? 'success' : 'none' })
       },
       fail: () => wx.showToast({ title: '无法读取剪贴板', icon: 'none' }),
-      complete: () => this.setData({ loadingClipboard: false })
+      complete: () => this.setData({ loadingClipboard: false, loadingParse: false })
     })
+  },
+
+  async parseTitle() {
+    const text = this.data.title.trim()
+    if (!text) {
+      wx.showToast({ title: '请先输入事项内容', icon: 'none' })
+      return
+    }
+    this.setData({ loadingParse: true })
+    const parsed = await aiParse(text)
+    this.setData({ loadingParse: false })
+    if (!parsed.recognized) {
+      wx.showToast({ title: '未识别到时间信息，请手动填写', icon: 'none' })
+      return
+    }
+    this.applyParse(parsed, { source: 'manual' })
+    wx.showToast({ title: '已智能解析，请确认', icon: 'success' })
+  },
+
+  applyParse(parsed, extra) {
+    const typeIndex = this.data.typeOptions.findIndex(o => o.value === parsed.suggestedType)
+    const setData = {
+      title: parsed.title,
+      date: parsed.date,
+      time: parsed.time,
+      type: parsed.suggestedType,
+      typeIndex: typeIndex >= 0 ? typeIndex : 0,
+      showPreview: true,
+      showEditForm: false,
+      ...extra
+    }
+    if (parsed.endTime) setData.endTime = parsed.endTime
+    this.setData(setData, () => this.buildPreview())
+  },
+
+  buildPreview() {
+    const { type, typeOptions, typeIndex, title, date, time, endTime, remindBefore } = this.data
+    const typeLabel = typeOptions[typeIndex].label
+    let dateLabel = displayDate(new Date(`${date}T00:00:00`))
+    let timeLabel = ''
+
+    if (type === 'event') {
+      timeLabel = endTime ? `${time} ~ ${endTime}` : time
+    } else if (type === 'deadline') {
+      timeLabel = `截止 ${time}`
+    }
+
+    if (type === 'todo') {
+      dateLabel = '无截止时间'
+    }
+
+    this.setData({
+      previewTypeLabel: typeLabel,
+      previewDateLabel: dateLabel,
+      previewTimeLabel: timeLabel
+    })
+  },
+
+  toggleEditForm() {
+    this.setData({ showEditForm: !this.data.showEditForm })
   },
 
   onTypeChange(event) {
@@ -89,13 +153,19 @@ Page({
     this.setData({
       typeIndex,
       type: this.data.typeOptions[typeIndex].value
-    })
+    }, () => this.buildPreview())
   },
 
   onTitleInput(event) { this.setData({ title: event.detail.value }) },
-  onDateChange(event) { this.setData({ date: event.detail.value }) },
-  onTimeChange(event) { this.setData({ time: event.detail.value }) },
-  onEndTimeChange(event) { this.setData({ endTime: event.detail.value }) },
+  onDateChange(event) {
+    this.setData({ date: event.detail.value }, () => this.buildPreview())
+  },
+  onTimeChange(event) {
+    this.setData({ time: event.detail.value }, () => this.buildPreview())
+  },
+  onEndTimeChange(event) {
+    this.setData({ endTime: event.detail.value }, () => this.buildPreview())
+  },
   onReminderChange(event) {
     const reminderIndex = Number(event.detail.value)
     this.setData({

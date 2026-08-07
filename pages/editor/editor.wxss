@@ -2,13 +2,36 @@
 .intro { margin-bottom: 38rpx; }
 .title { color: #142c25; font-size: 42rpx; font-weight: 700; }
 .hint { margin-top: 14rpx; color: #7c8985; font-size: 26rpx; }
-.import-button { background: #e8f2ed; border-radius: 18rpx; color: #176b55; font-size: 27rpx; line-height: 86rpx; }
-.source-note { margin: 16rpx 8rpx 28rpx; color: #43846f; font-size: 23rpx; }
-.form { margin-top: 34rpx; padding: 32rpx 28rpx; background: #fff; border-radius: 22rpx; }
+
+/* 输入区 */
+.input-area { margin-bottom: 28rpx; }
+.title-input { box-sizing: border-box; width: 100%; min-height: 110rpx; margin-bottom: 14rpx; padding: 20rpx; background: #fff; border-radius: 16rpx; color: #1b2925; font-size: 29rpx; line-height: 1.5; box-shadow: 0 4rpx 20rpx rgba(23, 64, 52, .04); }
+.parse-row { display: flex; gap: 16rpx; }
+.parse-btn { display: inline-block; padding: 14rpx 28rpx; background: #e8f2f6; border-radius: 12rpx; color: #2b6f97; font-size: 25rpx; }
+.parse-btn.loading { opacity: .6; }
+.clipboard-btn { flex: 1; padding: 0; background: #e8f2ed; border-radius: 12rpx; color: #176b55; font-size: 25rpx; line-height: 56rpx; text-align: center; }
+
+/* 确认卡片 */
+.preview-card { margin-bottom: 28rpx; padding: 32rpx 28rpx; background: #fff; border-radius: 22rpx; box-shadow: 0 8rpx 32rpx rgba(23, 64, 52, .06); }
+.preview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; }
+.preview-type { display: inline-block; padding: 6rpx 20rpx; border-radius: 10rpx; font-size: 22rpx; font-weight: 600; }
+.type-todo { background: #f0f2f5; color: #6e7c77; }
+.type-event { background: #e0f0ea; color: #176b55; }
+.type-deadline { background: #fdf0e3; color: #c76b2d; }
+.preview-edit { color: #597ef7; font-size: 25rpx; }
+.preview-title { color: #142c25; font-size: 32rpx; font-weight: 600; line-height: 1.45; margin-bottom: 18rpx; word-break: break-all; }
+.preview-meta { display: flex; align-items: center; gap: 18rpx; margin-bottom: 12rpx; }
+.preview-date { color: #4a5b55; font-size: 26rpx; }
+.preview-time { color: #176b55; font-size: 26rpx; font-weight: 600; }
+.preview-remind { color: #82908b; font-size: 23rpx; }
+
+/* 修改区 */
+.form { margin-bottom: 28rpx; padding: 32rpx 28rpx; background: #fff; border-radius: 22rpx; box-shadow: 0 8rpx 32rpx rgba(23, 64, 52, .06); }
+.form .title-input { box-shadow: none; background: #f5f7f6; }
 .label { margin: 0 0 16rpx; color: #6e7c77; font-size: 24rpx; }
-.title-input { box-sizing: border-box; width: 100%; min-height: 110rpx; margin-bottom: 34rpx; padding: 20rpx; background: #f5f7f6; border-radius: 14rpx; color: #1b2925; font-size: 29rpx; line-height: 1.5; }
 .form-row { display: flex; gap: 20rpx; margin-bottom: 32rpx; }
 .field { flex: 1; min-width: 0; }
 .picker { overflow: hidden; padding: 20rpx; background: #f5f7f6; border-radius: 14rpx; color: #263631; font-size: 27rpx; text-overflow: ellipsis; white-space: nowrap; }
-.save { margin-top: 38rpx; background: #176b55; border-radius: 20rpx; color: #fff; font-size: 30rpx; line-height: 96rpx; }
-.privacy { margin-top: 22rpx; color: #899590; font-size: 22rpx; line-height: 1.5; text-align: center; }
+
+/* 保存 */
+.save { margin-top: 8rpx; background: #176b55; border-radius: 20rpx; color: #fff; font-size: 30rpx; line-height: 96rpx; }

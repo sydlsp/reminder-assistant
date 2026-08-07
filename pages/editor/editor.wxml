@@ -1,20 +1,41 @@
 <view class="page">
   <view class="intro">
     <view class="title">{{isEdit ? '编辑事项' : '添加一件要记住的事'}}</view>
-    <view class="hint">{{isEdit ? '修改类型和内容后保存。' : '选择事务类型后再填写内容。'}}</view>
+    <view class="hint">{{isEdit ? '修改后确认保存。' : '输入内容后点击智能解析，或从微信消息导入。'}}</view>
   </view>
 
-  <button class="import-button" loading="{{loadingClipboard}}" bindtap="readClipboard">从剪贴板读取微信消息</button>
-  <view wx:if="{{source === 'clipboard'}}" class="source-note">已从剪贴板导入，请确认类型和时间。</view>
+  <!-- 输入区 -->
+  <view class="input-area">
+    <textarea class="title-input" placeholder="例如：明天下午3点开会讨论需求" value="{{title}}" maxlength="180" auto-height bindinput="onTitleInput" />
+    <view class="parse-row">
+      <text class="parse-btn {{loadingParse ? 'loading' : ''}}" bindtap="parseTitle">{{loadingParse ? '解析中...' : '智能解析'}}</text>
+      <button class="clipboard-btn" loading="{{loadingClipboard}}" bindtap="readClipboard">从微信导入</button>
+    </view>
+  </view>
 
-  <view class="form">
+  <!-- 确认卡片 -->
+  <view wx:if="{{showPreview}}" class="preview-card">
+    <view class="preview-header">
+      <view class="preview-type type-{{type}}">{{previewTypeLabel}}</view>
+      <text class="preview-edit" bindtap="toggleEditForm">{{showEditForm ? '收起修改' : '修改'}}</text>
+    </view>
+    <view class="preview-title">{{title}}</view>
+    <view class="preview-meta">
+      <text class="preview-date">{{previewDateLabel}}</text>
+      <text wx:if="{{previewTimeLabel}}" class="preview-time">{{previewTimeLabel}}</text>
+    </view>
+    <view wx:if="{{type !== 'todo'}}" class="preview-remind">提前 {{remindBefore}} 分钟提醒</view>
+  </view>
+
+  <!-- 修改区（可折叠） -->
+  <view wx:if="{{showPreview && showEditForm}}" class="form">
     <view class="label">事务类型</view>
     <picker mode="selector" range="{{typeOptions}}" range-key="label" value="{{typeIndex}}" bindchange="onTypeChange">
       <view class="picker">{{typeOptions[typeIndex].label}} · {{typeOptions[typeIndex].desc}}</view>
     </picker>
 
     <view class="label" style="margin-top: 34rpx;">事项</view>
-    <textarea class="title-input" placeholder="例如：明天下午跟进报价" value="{{title}}" maxlength="180" auto-height bindinput="onTitleInput" />
+    <textarea class="title-input" placeholder="事项内容" value="{{title}}" maxlength="180" auto-height bindinput="onTitleInput" />
 
     <block wx:if="{{type === 'event'}}">
       <view class="form-row">
@@ -53,6 +74,7 @@
       <view class="picker">提前 {{remindBefore}} 分钟</view>
     </picker>
   </view>
-  <button class="save" bindtap="save">{{isEdit ? '更新事项' : '保存事项'}}</button>
-  <view class="privacy">仅读取你主动复制的内容，用于生成此提醒草稿。</view>
+
+  <!-- 确认保存 -->
+  <button wx:if="{{showPreview}}" class="save" bindtap="save">{{isEdit ? '确认更新' : '确认并保存'}}</button>
 </view>

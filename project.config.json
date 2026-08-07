@@ -30,6 +30,7 @@
     }
   },
   "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/",
   "libVersion": "3.7.9",
   "appid": "wx3907b8a131c5b0cc",
   "projectname": "reminder-assistant",
