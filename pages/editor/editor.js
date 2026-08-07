@@ -3,9 +3,17 @@ const { dateString, timeString, parseClipboard } = require('../../utils/date')
 
 Page({
   data: {
+    type: 'todo',
+    typeOptions: [
+      { label: '待办', value: 'todo', desc: '无明确时间' },
+      { label: '日程', value: 'event', desc: '有明确时段' },
+      { label: '截止', value: 'deadline', desc: '有截止时间' }
+    ],
+    typeIndex: 0,
     title: '',
     date: dateString(),
     time: timeString(),
+    endTime: timeString(),
     remindBefore: 10,
     reminderOptions: [0, 5, 10, 15, 30, 60],
     reminderIndex: 2,
@@ -28,10 +36,13 @@ Page({
           return
         }
         const parsed = parseClipboard(data)
+        const typeIndex = this.data.typeOptions.findIndex(o => o.value === parsed.suggestedType)
         this.setData({
           title: parsed.title,
           date: parsed.date,
           time: parsed.time,
+          type: parsed.suggestedType,
+          typeIndex: typeIndex >= 0 ? typeIndex : 0,
           source: 'clipboard',
           originalText: data
         })
@@ -42,9 +53,18 @@ Page({
     })
   },
 
+  onTypeChange(event) {
+    const typeIndex = Number(event.detail.value)
+    this.setData({
+      typeIndex,
+      type: this.data.typeOptions[typeIndex].value
+    })
+  },
+
   onTitleInput(event) { this.setData({ title: event.detail.value }) },
   onDateChange(event) { this.setData({ date: event.detail.value }) },
   onTimeChange(event) { this.setData({ time: event.detail.value }) },
+  onEndTimeChange(event) { this.setData({ endTime: event.detail.value }) },
   onReminderChange(event) {
     const reminderIndex = Number(event.detail.value)
     this.setData({
@@ -54,22 +74,32 @@ Page({
   },
 
   save() {
-    const { title, date, time, remindBefore, source, originalText } = this.data
+    const { type, title, date, time, endTime, remindBefore, source, originalText } = this.data
     if (!title.trim()) {
       wx.showToast({ title: '请填写事项内容', icon: 'none' })
       return
     }
-    const start = new Date(`${date}T${time}:00`)
-    upsertEvent({
+
+    const base = {
       id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       title: title.trim(),
-      startAt: start.toISOString(),
+      type,
       remindBefore,
       source,
       originalText,
       status: 'pending',
       createdAt: new Date().toISOString()
-    })
+    }
+
+    if (type === 'event') {
+      base.startAt = new Date(`${date}T${time}:00`).toISOString()
+      base.endAt = new Date(`${date}T${endTime}:00`).toISOString()
+    } else if (type === 'deadline') {
+      base.deadline = new Date(`${date}T${time}:00`).toISOString()
+    }
+    // todo: no time fields
+
+    upsertEvent(base)
     wx.showToast({ title: '已加入日程', icon: 'success' })
     setTimeout(() => wx.navigateBack(), 450)
   }

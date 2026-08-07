@@ -24,10 +24,12 @@ function updateStatus(id, status) {
 
 function shiftEvent(id, minutes) {
   const events = getEvents().map((event) => {
-    if (event.id !== id) return event
+    if (event.id !== id || event.type !== 'event') return event
     const start = new Date(event.startAt)
+    const end = new Date(event.endAt)
     start.setMinutes(start.getMinutes() + minutes)
-    return { ...event, startAt: start.toISOString(), status: 'pending' }
+    end.setMinutes(end.getMinutes() + minutes)
+    return { ...event, startAt: start.toISOString(), endAt: end.toISOString(), status: 'pending' }
   })
   saveEvents(events)
 }

@@ -2,7 +2,7 @@
   <view class="hero">
     <view class="eyebrow">我的日程</view>
     <view class="headline">把每一天安排得更清楚。</view>
-    <view class="date">{{scheduleLabel}} · 已完成 {{completedCount}} 项</view>
+    <view class="date">{{scheduleLabel}} · 共 {{totalCount}} 项 · 已完成 {{completedCount}} 项</view>
   </view>
 
   <view class="date-nav">
@@ -19,24 +19,69 @@
     <button class="secondary" bindtap="importClipboard">从微信消息导入</button>
   </view>
 
-  <view class="section-title">当天安排</view>
-  <view wx:if="{{events.length}}" class="event-list">
-    <view wx:for="{{events}}" wx:key="id" class="event-card {{item.status === 'done' ? 'is-done' : ''}}">
-      <view class="time">{{item.time}}</view>
-      <view class="event-body">
-        <view class="event-title">{{item.title}}</view>
-        <view class="event-meta">{{item.source === 'clipboard' ? '来自微信消息' : '手动添加'}} · 提前 {{item.remindBefore}} 分钟提醒</view>
-        <view wx:if="{{item.status !== 'done'}}" class="card-actions">
-          <text class="action" data-id="{{item.id}}" bindtap="complete">完成</text>
-          <text class="action muted" data-id="{{item.id}}" bindtap="postpone">延后 1 小时</text>
+  <!-- 日程安排 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="section-title">日程安排</view>
+      <view class="section-badge">{{schedules.length}}</view>
+    </view>
+    <view wx:if="{{schedules.length}}" class="event-list">
+      <view wx:for="{{schedules}}" wx:key="id" class="event-card {{item.status === 'done' ? 'is-done' : ''}}">
+        <view class="time">{{item.timeRange}}</view>
+        <view class="event-body">
+          <view class="event-title">{{item.title}}</view>
+          <view class="event-meta">{{item.source === 'clipboard' ? '来自微信消息' : '手动添加'}} · 提前 {{item.remindBefore}} 分钟提醒</view>
+          <view wx:if="{{item.status !== 'done'}}" class="card-actions">
+            <text class="action" data-id="{{item.id}}" bindtap="complete">完成</text>
+            <text class="action muted" data-id="{{item.id}}" bindtap="postpone">延后 1 小时</text>
+          </view>
+          <view wx:else class="done-label">已完成</view>
         </view>
-        <view wx:else class="done-label">已完成</view>
       </view>
     </view>
+    <view wx:else class="empty-small">暂无日程安排</view>
   </view>
-  <view wx:else class="empty">
-    <view class="empty-icon">◌</view>
-    <view class="empty-title">这一天还没有安排</view>
-    <view class="empty-copy">可以手动添加，或复制一条微信消息后导入。</view>
+
+  <!-- 截止任务 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="section-title">截止任务</view>
+      <view class="section-badge">{{deadlines.length}}</view>
+    </view>
+    <view wx:if="{{deadlines.length}}" class="event-list">
+      <view wx:for="{{deadlines}}" wx:key="id" class="event-card {{item.status === 'done' ? 'is-done' : ''}}">
+        <view class="time deadline-time">{{item.time}}</view>
+        <view class="event-body">
+          <view class="event-title">{{item.title}}</view>
+          <view class="event-meta">截止 {{item.time}} · 提前 {{item.remindBefore}} 分钟提醒</view>
+          <view wx:if="{{item.status !== 'done'}}" class="card-actions">
+            <text class="action" data-id="{{item.id}}" bindtap="complete">完成</text>
+          </view>
+          <view wx:else class="done-label">已完成</view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty-small">暂无截止任务</view>
+  </view>
+
+  <!-- 待办事务 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="section-title">待办事务</view>
+      <view class="section-badge">{{todos.length}}</view>
+    </view>
+    <view wx:if="{{todos.length}}" class="event-list">
+      <view wx:for="{{todos}}" wx:key="id" class="todo-card {{item.status === 'done' ? 'is-done' : ''}}">
+        <view class="todo-check" data-id="{{item.id}}" bindtap="complete">
+          <text wx:if="{{item.status === 'done'}}" class="check-done">✓</text>
+          <text wx:else class="check-pending">○</text>
+        </view>
+        <view class="event-body">
+          <view class="event-title">{{item.title}}</view>
+          <view wx:if="{{item.status === 'done'}}" class="done-label">已完成</view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty-small">暂无待办事务</view>
   </view>
 </view>

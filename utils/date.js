@@ -59,12 +59,21 @@ function parseClipboard(text) {
     parsed.setHours(9, 0, 0, 0)
   }
 
+  let suggestedType = 'todo'
+  if (matchedDate && timeMatch) suggestedType = 'event'
+  else if (matchedDate) suggestedType = 'deadline'
+
   return {
     title: normalized,
     date: dateString(parsed),
     time: timeString(parsed),
-    recognized: matchedDate || Boolean(timeMatch)
+    recognized: matchedDate || Boolean(timeMatch),
+    suggestedType
   }
 }
 
-module.exports = { dateString, timeString, weekday, isSameDay, displayTime, displayDate, parseClipboard }
+function displayTimeRange(startIso, endIso) {
+  return `${timeString(new Date(startIso))} - ${timeString(new Date(endIso))}`
+}
+
+module.exports = { dateString, timeString, weekday, isSameDay, displayTime, displayTimeRange, displayDate, parseClipboard }

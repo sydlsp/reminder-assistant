@@ -28,3 +28,19 @@
 .empty-icon { color: #b6c6c0; font-size: 58rpx; }
 .empty-title { margin-top: 18rpx; color: #30413b; font-size: 30rpx; font-weight: 600; }
 .empty-copy { margin-top: 14rpx; color: #81908a; font-size: 25rpx; line-height: 1.6; }
+
+/* 分区 */
+.section { margin-bottom: 48rpx; }
+.section-header { display: flex; align-items: center; gap: 14rpx; margin-bottom: 20rpx; }
+.section-badge { padding: 4rpx 16rpx; background: #e7eeeb; border-radius: 100rpx; color: #176b55; font-size: 22rpx; }
+.empty-small { padding: 32rpx 24rpx; background: #fff; border-radius: 18rpx; color: #82908b; font-size: 25rpx; text-align: center; }
+
+/* 截止时间 */
+.deadline-time { color: #c76b2d; }
+
+/* 待办卡片 */
+.todo-card { display: flex; align-items: flex-start; gap: 20rpx; padding: 28rpx 24rpx; background: #fff; border-radius: 20rpx; box-shadow: 0 8rpx 32rpx rgba(23, 64, 52, .05); }
+.todo-card.is-done { opacity: .55; }
+.todo-check { flex-shrink: 0; width: 52rpx; height: 52rpx; display: flex; align-items: center; justify-content: center; }
+.check-pending { color: #b6c6c0; font-size: 44rpx; }
+.check-done { color: #176b55; font-size: 36rpx; font-weight: 700; }
