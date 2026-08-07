@@ -34,8 +34,13 @@
           <view wx:if="{{item.status !== 'done'}}" class="card-actions">
             <text class="action" data-id="{{item.id}}" bindtap="complete">完成</text>
             <text class="action muted" data-id="{{item.id}}" bindtap="postpone">延后 1 小时</text>
+            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
+            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
           </view>
-          <view wx:else class="done-label">已完成</view>
+          <view wx:else class="card-actions">
+            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
+            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
+          </view>
         </view>
       </view>
     </view>
@@ -56,8 +61,13 @@
           <view class="event-meta">截止 {{item.time}} · 提前 {{item.remindBefore}} 分钟提醒</view>
           <view wx:if="{{item.status !== 'done'}}" class="card-actions">
             <text class="action" data-id="{{item.id}}" bindtap="complete">完成</text>
+            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
+            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
           </view>
-          <view wx:else class="done-label">已完成</view>
+          <view wx:else class="card-actions">
+            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
+            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
+          </view>
         </view>
       </view>
     </view>
@@ -78,7 +88,14 @@
         </view>
         <view class="event-body">
           <view class="event-title">{{item.title}}</view>
-          <view wx:if="{{item.status === 'done'}}" class="done-label">已完成</view>
+          <view wx:if="{{item.status !== 'done'}}" class="card-actions">
+            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
+            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
+          </view>
+          <view wx:else class="card-actions">
+            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
+            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
+          </view>
         </view>
       </view>
     </view>

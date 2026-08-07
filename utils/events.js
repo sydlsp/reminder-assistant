@@ -34,4 +34,9 @@ function shiftEvent(id, minutes) {
   saveEvents(events)
 }
 
-module.exports = { getEvents, upsertEvent, updateStatus, shiftEvent }
+function deleteEvent(id) {
+  const events = getEvents().filter((event) => event.id !== id)
+  saveEvents(events)
+}
+
+module.exports = { getEvents, upsertEvent, updateStatus, shiftEvent, deleteEvent }

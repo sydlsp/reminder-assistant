@@ -1,4 +1,4 @@
-const { getEvents, updateStatus, shiftEvent } = require('../../utils/events')
+const { getEvents, updateStatus, shiftEvent, deleteEvent } = require('../../utils/events')
 const { dateString, isSameDay, displayTime, displayTimeRange, displayDate } = require('../../utils/date')
 
 Page({
@@ -94,5 +94,25 @@ Page({
     shiftEvent(id, 60)
     wx.showToast({ title: '已延后 1 小时', icon: 'success' })
     this.loadSchedule()
+  },
+
+  editItem(event) {
+    const id = event.currentTarget.dataset.id
+    wx.navigateTo({ url: `/pages/editor/editor?id=${id}` })
+  },
+
+  removeItem(event) {
+    const id = event.currentTarget.dataset.id
+    wx.showModal({
+      title: '确认删除',
+      content: '删除后无法恢复',
+      confirmColor: '#d45252',
+      success: (res) => {
+        if (res.confirm) {
+          deleteEvent(id)
+          this.loadSchedule()
+        }
+      }
+    })
   }
 })

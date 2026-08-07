@@ -1,8 +1,10 @@
-const { upsertEvent } = require('../../utils/events')
+const { getEvents, upsertEvent } = require('../../utils/events')
 const { dateString, timeString, parseClipboard } = require('../../utils/date')
 
 Page({
   data: {
+    editId: '',
+    isEdit: false,
     type: 'todo',
     typeOptions: [
       { label: '待办', value: 'todo', desc: '无明确时间' },
@@ -24,7 +26,36 @@ Page({
 
   onLoad(options) {
     if (options.date) this.setData({ date: options.date })
-    if (options.importClipboard === '1') this.readClipboard()
+    if (options.id) {
+      this.loadEvent(options.id)
+    } else if (options.importClipboard === '1') {
+      this.readClipboard()
+    }
+  },
+
+  loadEvent(id) {
+    const event = getEvents().find(e => e.id === id)
+    if (!event) return
+    const typeIndex = this.data.typeOptions.findIndex(o => o.value === (event.type || 'event'))
+    const start = event.startAt ? new Date(event.startAt) : null
+    const end = event.endAt ? new Date(event.endAt) : null
+    const dl = event.deadline ? new Date(event.deadline) : null
+    const reminderIndex = this.data.reminderOptions.indexOf(event.remindBefore ?? 10)
+
+    this.setData({
+      editId: id,
+      isEdit: true,
+      type: event.type || 'event',
+      typeIndex: typeIndex >= 0 ? typeIndex : 1,
+      title: event.title || '',
+      date: event.type === 'event' && start ? dateString(start) : event.type === 'deadline' && dl ? dateString(dl) : this.data.date,
+      time: start ? timeString(start) : dl ? timeString(dl) : timeString(),
+      endTime: end ? timeString(end) : timeString(),
+      remindBefore: event.remindBefore ?? 10,
+      reminderIndex: reminderIndex >= 0 ? reminderIndex : 2,
+      source: event.source || 'manual',
+      originalText: event.originalText || ''
+    })
   },
 
   readClipboard() {
@@ -74,14 +105,14 @@ Page({
   },
 
   save() {
-    const { type, title, date, time, endTime, remindBefore, source, originalText } = this.data
+    const { editId, type, title, date, time, endTime, remindBefore, source, originalText } = this.data
     if (!title.trim()) {
       wx.showToast({ title: '请填写事项内容', icon: 'none' })
       return
     }
 
     const base = {
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      id: editId || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       title: title.trim(),
       type,
       remindBefore,
@@ -97,10 +128,9 @@ Page({
     } else if (type === 'deadline') {
       base.deadline = new Date(`${date}T${time}:00`).toISOString()
     }
-    // todo: no time fields
 
     upsertEvent(base)
-    wx.showToast({ title: '已加入日程', icon: 'success' })
+    wx.showToast({ title: editId ? '已更新事项' : '已加入日程', icon: 'success' })
     setTimeout(() => wx.navigateBack(), 450)
   }
 })
