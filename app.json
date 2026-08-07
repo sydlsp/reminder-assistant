@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/editor/editor"
+  ],
+  "window": {
+    "navigationBarTitleText": "提醒助手",
+    "navigationBarBackgroundColor": "#F7F8FA",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F7F8FA",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

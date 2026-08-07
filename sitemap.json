@@ -1,0 +1,4 @@
+{
+  "desc": "提醒助手",
+  "rules": [{ "action": "allow", "page": "*" }]
+}

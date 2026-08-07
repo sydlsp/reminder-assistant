@@ -1,0 +1,14 @@
+.page { padding: 48rpx 32rpx 72rpx; }
+.intro { margin-bottom: 38rpx; }
+.title { color: #142c25; font-size: 42rpx; font-weight: 700; }
+.hint { margin-top: 14rpx; color: #7c8985; font-size: 26rpx; }
+.import-button { background: #e8f2ed; border-radius: 18rpx; color: #176b55; font-size: 27rpx; line-height: 86rpx; }
+.source-note { margin: 16rpx 8rpx 28rpx; color: #43846f; font-size: 23rpx; }
+.form { margin-top: 34rpx; padding: 32rpx 28rpx; background: #fff; border-radius: 22rpx; }
+.label { margin: 0 0 16rpx; color: #6e7c77; font-size: 24rpx; }
+.title-input { box-sizing: border-box; width: 100%; min-height: 110rpx; margin-bottom: 34rpx; padding: 20rpx; background: #f5f7f6; border-radius: 14rpx; color: #1b2925; font-size: 29rpx; line-height: 1.5; }
+.form-row { display: flex; gap: 20rpx; margin-bottom: 32rpx; }
+.field { flex: 1; min-width: 0; }
+.picker { overflow: hidden; padding: 20rpx; background: #f5f7f6; border-radius: 14rpx; color: #263631; font-size: 27rpx; text-overflow: ellipsis; white-space: nowrap; }
+.save { margin-top: 38rpx; background: #176b55; border-radius: 20rpx; color: #fff; font-size: 30rpx; line-height: 96rpx; }
+.privacy { margin-top: 22rpx; color: #899590; font-size: 22rpx; line-height: 1.5; text-align: center; }

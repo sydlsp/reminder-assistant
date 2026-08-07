@@ -1,0 +1,32 @@
+<view class="page">
+  <view class="intro">
+    <view class="title">添加一件要记住的事</view>
+    <view class="hint">输入自然语言也可以，时间可在下方校正。</view>
+  </view>
+
+  <button class="import-button" loading="{{loadingClipboard}}" bindtap="readClipboard">从剪贴板读取微信消息</button>
+  <view wx:if="{{source === 'clipboard'}}" class="source-note">已从剪贴板导入，请确认事项和时间。</view>
+
+  <view class="form">
+    <view class="label">事项</view>
+    <textarea class="title-input" placeholder="例如：明天下午跟进报价" value="{{title}}" maxlength="180" auto-height bindinput="onTitleInput" />
+
+    <view class="form-row">
+      <view class="field">
+        <view class="label">日期</view>
+        <picker mode="date" value="{{date}}" bindchange="onDateChange"><view class="picker">{{date}}</view></picker>
+      </view>
+      <view class="field">
+        <view class="label">开始时间</view>
+        <picker mode="time" value="{{time}}" bindchange="onTimeChange"><view class="picker">{{time}}</view></picker>
+      </view>
+    </view>
+
+    <view class="label">提前提醒</view>
+    <picker mode="selector" range="{{reminderOptions}}" value="{{reminderIndex}}" bindchange="onReminderChange">
+      <view class="picker">提前 {{remindBefore}} 分钟</view>
+    </picker>
+  </view>
+  <button class="save" bindtap="save">保存事项</button>
+  <view class="privacy">仅读取你主动复制的内容，用于生成此提醒草稿。</view>
+</view>
