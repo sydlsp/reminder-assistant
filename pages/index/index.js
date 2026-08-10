@@ -51,12 +51,21 @@ Page({
       .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
       .map(e => ({ ...e, time: displayTime(e.deadline) }))
 
+    const split = arr => [
+      arr.filter(e => e.status !== 'done'),
+      arr.filter(e => e.status === 'done')
+    ]
+
+    const [todosPending, todosDone] = split(todos)
+    const [schedulesPending, schedulesDone] = split(schedules)
+    const [deadlinesPending, deadlinesDone] = split(deadlines)
+
     this.setData({
       scheduleLabel: displayDate(selected),
       isToday: dateString(selected) === dateString(today),
-      todos,
-      schedules,
-      deadlines,
+      todosPending, todosDone,
+      schedulesPending, schedulesDone,
+      deadlinesPending, deadlinesDone,
       completedCount: allEvents.filter(e => e.status === 'done').length,
       totalCount: allEvents.length
     })

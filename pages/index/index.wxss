@@ -46,3 +46,7 @@
 .todo-check { flex-shrink: 0; width: 52rpx; height: 52rpx; display: flex; align-items: center; justify-content: center; }
 .check-pending { color: #b6c6c0; font-size: 44rpx; }
 .check-done { color: #176b55; font-size: 36rpx; font-weight: 700; }
+
+/* 已完成分组 */
+.done-group { margin-top: 24rpx; }
+.done-divider { padding: 16rpx 8rpx; color: #6c7774; font-size: 23rpx; border-top: 2rpx solid #dfe6e3; }
