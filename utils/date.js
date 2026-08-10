@@ -181,6 +181,13 @@ function parseClipboard(text) {
   }
 
   /* ======== 5. 清理标题 ======== */
+  let location = ''
+  const locMatch = cleanedTitle.match(/在([^\s，,。\.！!；;：:？?]{1,20}(?:会议室|房间|楼|层|号|室|厅|区|座|栋|大厦|中心|公司|办公室|教室))/)
+  if (locMatch) {
+    location = locMatch[1]
+    cleanedTitle = cleanedTitle.replace(locMatch[0], '')
+  }
+
   cleanedTitle = cleanedTitle
     .replace(/[，,。\.！!；;：:？?\s]+$/, '')
     .replace(/^[，,。\.！!；;：:？?\s]+/, '')
@@ -191,6 +198,7 @@ function parseClipboard(text) {
     date: dateString(parsed),
     time: timeString(parsed),
     endTime: endTimeStr,
+    location,
     recognized: matchedDate || matchedTime,
     suggestedType
   }

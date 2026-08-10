@@ -22,10 +22,11 @@ function buildSystemPrompt() {
 3. 识别到"X点到Y点"或"X:00-Y:00"等时间段 → type=event，分别填入time和endTime
 4. 识别到含截止含义或仅给出日期无时间段 → type=deadline
 5. 无任何日期和时间信息 → type=todo, recognized=false
-6. title字段：清理掉日期和时间描述后的纯事项内容
+6. title字段：清理掉日期、时间和地点描述后的纯事项内容
+7. location字段：提取地点信息（如"在302会议室"→"302会议室"），没有则返回空字符串
 
 只返回 JSON，格式如下：
-{"title":"事项标题","date":"YYYY-MM-DD","time":"HH:mm","endTime":"HH:mm或空","suggestedType":"todo|event|deadline","recognized":true|false}`
+{"title":"事项标题","date":"YYYY-MM-DD","time":"HH:mm","endTime":"HH:mm或空","location":"地点或空","suggestedType":"todo|event|deadline","recognized":true|false}`
 }
 
 /**

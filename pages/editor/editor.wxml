@@ -10,6 +10,7 @@
     <view class="parse-row">
       <text class="parse-btn {{loadingParse ? 'loading' : ''}}" bindtap="parseTitle">{{loadingParse ? '解析中...' : '智能解析'}}</text>
       <button class="clipboard-btn" loading="{{loadingClipboard}}" bindtap="readClipboard">从微信导入</button>
+      <text class="parse-btn manual-btn" bindtap="manualFill">手动填写</text>
     </view>
   </view>
 
@@ -24,6 +25,7 @@
       <text class="preview-date">{{previewDateLabel}}</text>
       <text wx:if="{{previewTimeLabel}}" class="preview-time">{{previewTimeLabel}}</text>
     </view>
+    <view wx:if="{{location}}" class="preview-location">@ {{location}}</view>
     <view wx:if="{{type !== 'todo'}}" class="preview-remind">提前 {{remindBefore}} 分钟提醒</view>
   </view>
 
@@ -36,6 +38,9 @@
 
     <view class="label" style="margin-top: 34rpx;">事项</view>
     <textarea class="title-input" placeholder="事项内容" value="{{title}}" maxlength="180" auto-height bindinput="onTitleInput" />
+
+    <view class="label" style="margin-top: 34rpx;">地点（选填）</view>
+    <input class="location-input" placeholder="如：302会议室" value="{{location}}" maxlength="50" bindinput="onLocationInput" />
 
     <block wx:if="{{type === 'event'}}">
       <view class="form-row">

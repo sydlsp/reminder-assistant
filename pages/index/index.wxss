@@ -19,6 +19,7 @@
 .time { min-width: 86rpx; color: #176b55; font-size: 30rpx; font-weight: 700; }
 .event-body { flex: 1; min-width: 0; }
 .event-title { overflow: hidden; color: #1a2824; font-size: 30rpx; font-weight: 600; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.event-location { margin-top: 6rpx; color: #8b7355; font-size: 22rpx; }
 .event-meta { margin-top: 10rpx; color: #82908b; font-size: 22rpx; }
 .card-actions { display: flex; gap: 28rpx; margin-top: 22rpx; }
 .action { color: #176b55; font-size: 25rpx; }

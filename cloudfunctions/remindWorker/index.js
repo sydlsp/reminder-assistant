@@ -39,7 +39,7 @@ exports.main = async (event, context) => {
           data: {
             thing4: { value: r.title.slice(0, 20) },
             time2: { value: formatDate(r.eventTime) },
-            thing3: { value: '无' }
+            thing3: { value: r.location || '无' }
           }
         })
         await db.collection('reminders').doc(r._id).update({

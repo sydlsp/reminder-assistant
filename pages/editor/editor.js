@@ -25,6 +25,7 @@ Page({
     reminderIndex: 2,
     source: 'manual',
     originalText: '',
+    location: '',
     loadingClipboard: false,
     loadingParse: false,
     // 预览摘要
@@ -68,7 +69,8 @@ Page({
       remindBefore: event.remindBefore ?? 10,
       reminderIndex: reminderIndex >= 0 ? reminderIndex : 2,
       source: event.source || 'manual',
-      originalText: event.originalText || ''
+      originalText: event.originalText || '',
+      location: event.location || ''
     }, () => this.buildPreview())
   },
 
@@ -106,6 +108,10 @@ Page({
     }
   },
 
+  manualFill() {
+    this.setData({ showPreview: true, showEditForm: true }, () => this.buildPreview())
+  },
+
   applyParse(parsed, extra) {
     const typeIndex = this.data.typeOptions.findIndex(o => o.value === parsed.suggestedType)
     const setData = {
@@ -119,6 +125,7 @@ Page({
       ...extra
     }
     if (parsed.endTime) setData.endTime = parsed.endTime
+    if (parsed.location) setData.location = parsed.location
     this.setData(setData, () => this.buildPreview())
   },
 
@@ -144,6 +151,8 @@ Page({
       previewTimeLabel: timeLabel
     })
   },
+
+  onLocationInput(event) { this.setData({ location: event.detail.value }) },
 
   toggleEditForm() {
     this.setData({ showEditForm: !this.data.showEditForm })
@@ -176,7 +185,7 @@ Page({
   },
 
   save() {
-    const { editId, type, title, date, time, endTime, remindBefore, source, originalText } = this.data
+    const { editId, type, title, date, time, endTime, remindBefore, source, originalText, location } = this.data
     if (!title.trim()) {
       wx.showToast({ title: '请填写事项内容', icon: 'none' })
       return
@@ -186,6 +195,7 @@ Page({
       id: editId || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       title: title.trim(),
       type,
+      location,
       remindBefore,
       source,
       originalText,

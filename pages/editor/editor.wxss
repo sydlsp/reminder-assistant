@@ -9,6 +9,7 @@
 .parse-row { display: flex; gap: 16rpx; }
 .parse-btn { display: inline-block; padding: 14rpx 28rpx; background: #e8f2f6; border-radius: 12rpx; color: #2b6f97; font-size: 25rpx; }
 .parse-btn.loading { opacity: .6; }
+.manual-btn { background: #f0ece4; color: #8b7355; }
 .clipboard-btn { flex: 1; padding: 0; background: #e8f2ed; border-radius: 12rpx; color: #176b55; font-size: 25rpx; line-height: 56rpx; text-align: center; }
 
 /* 确认卡片 */
@@ -23,11 +24,14 @@
 .preview-meta { display: flex; align-items: center; gap: 18rpx; margin-bottom: 12rpx; }
 .preview-date { color: #4a5b55; font-size: 26rpx; }
 .preview-time { color: #176b55; font-size: 26rpx; font-weight: 600; }
+.preview-location { display: flex; align-items: center; margin-bottom: 12rpx; color: #8b7355; font-size: 24rpx; }
+.preview-location::before { content: ''; display: inline-block; width: 12rpx; height: 12rpx; margin-right: 8rpx; background: #d4a853; border-radius: 50%; }
 .preview-remind { color: #82908b; font-size: 23rpx; }
 
 /* 修改区 */
 .form { margin-bottom: 28rpx; padding: 32rpx 28rpx; background: #fff; border-radius: 22rpx; box-shadow: 0 8rpx 32rpx rgba(23, 64, 52, .06); }
 .form .title-input { box-shadow: none; background: #f5f7f6; }
+.location-input { box-sizing: border-box; width: 100%; height: 80rpx; padding: 20rpx; margin-bottom: 14rpx; background: #f5f7f6; border-radius: 16rpx; color: #263631; font-size: 27rpx; line-height: 40rpx; }
 .label { margin: 0 0 16rpx; color: #6e7c77; font-size: 24rpx; }
 .form-row { display: flex; gap: 20rpx; margin-bottom: 32rpx; }
 .field { flex: 1; min-width: 0; }
