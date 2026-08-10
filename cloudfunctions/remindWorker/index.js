@@ -67,12 +67,15 @@ exports.main = async (event, context) => {
   }
 }
 
+// 云服务器运行于 UTC 时区，formatDate 需补偿 +8 小时以显示北京时间
+const TZ_OFFSET_MS = 8 * 60 * 60 * 1000
+
 function formatDate(d) {
   if (!d) return ''
-  const date = new Date(d)
-  const M = date.getMonth() + 1
-  const D = date.getDate()
-  const h = String(date.getHours()).padStart(2, '0')
-  const m = String(date.getMinutes()).padStart(2, '0')
+  const date = new Date(new Date(d).getTime() + TZ_OFFSET_MS)
+  const M = date.getUTCMonth() + 1
+  const D = date.getUTCDate()
+  const h = String(date.getUTCHours()).padStart(2, '0')
+  const m = String(date.getUTCMinutes()).padStart(2, '0')
   return `${M}月${D}日 ${h}:${m}`
 }

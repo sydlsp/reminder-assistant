@@ -1,5 +1,5 @@
 const { getEvents, upsertEvent } = require('../../utils/events')
-const { dateString, timeString, displayDate } = require('../../utils/date')
+const { dateString, timeString, displayDate, localDate } = require('../../utils/date')
 const { aiParse } = require('../../utils/aiParser')
 const { registerReminder } = require('../../utils/reminder')
 
@@ -132,7 +132,7 @@ Page({
   buildPreview() {
     const { type, typeOptions, typeIndex, title, date, time, endTime, remindBefore } = this.data
     const typeLabel = typeOptions[typeIndex].label
-    let dateLabel = displayDate(new Date(`${date}T00:00:00`))
+    let dateLabel = displayDate(localDate(date, '00:00'))
     let timeLabel = ''
 
     if (type === 'event') {
@@ -204,10 +204,10 @@ Page({
     }
 
     if (type === 'event') {
-      base.startAt = new Date(`${date}T${time}:00`).toISOString()
-      base.endAt = new Date(`${date}T${endTime}:00`).toISOString()
+      base.startAt = localDate(date, time).toISOString()
+      base.endAt = localDate(date, endTime).toISOString()
     } else if (type === 'deadline') {
-      base.deadline = new Date(`${date}T${time}:00`).toISOString()
+      base.deadline = localDate(date, time).toISOString()
     }
 
     upsertEvent(base)

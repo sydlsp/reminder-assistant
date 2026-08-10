@@ -2,6 +2,15 @@ function pad(value) {
   return String(value).padStart(2, '0')
 }
 
+/**
+ * 安全构造本地时间 Date（数值参数版本，永远按本地时区解释）
+ */
+function localDate(dateStr, timeStr) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const [h, min] = (timeStr || '00:00').split(':').map(Number)
+  return new Date(y, m - 1, d, h, min, 0)
+}
+
 function dateString(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
@@ -208,4 +217,4 @@ function displayTimeRange(startIso, endIso) {
   return `${timeString(new Date(startIso))} - ${timeString(new Date(endIso))}`
 }
 
-module.exports = { dateString, timeString, weekday, isSameDay, displayTime, displayTimeRange, displayDate, parseClipboard }
+module.exports = { dateString, timeString, weekday, isSameDay, displayTime, displayTimeRange, displayDate, parseClipboard, localDate }
