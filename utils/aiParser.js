@@ -3,7 +3,12 @@ const { DEEPSEEK_API_KEY } = require('../config')
 
 const API_URL = 'https://api.deepseek.com/chat/completions'
 
-const SYSTEM_PROMPT = `你是一个日程解析助手。根据用户输入的自然语言文本，提取其中的日程信息并返回严格 JSON。
+function buildSystemPrompt() {
+  const today = new Date()
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const weekday = ['日', '一', '二', '三', '四', '五', '六'][today.getDay()]
+
+  return `你是一个日程解析助手。根据用户输入的自然语言文本，提取其中的日程信息并返回严格 JSON。
 
 分类定义：
 - todo：待办事务，无明确日期和时间
@@ -11,7 +16,7 @@ const SYSTEM_PROMPT = `你是一个日程解析助手。根据用户输入的自
 - deadline：有截止日期/时间（含"截止""ddl""deadline""之前""到期"等关键词，或仅给出日期无具体时间点）
 
 解析规则：
-1. 日期：今天=当前日期(2026-08-07)，明天=+1天，后天=+2天，大后天=+3天
+1. 日期：今天=${dateStr}（周${weekday}），明天=+1天，后天=+2天，大后天=+3天
    下周X=下周对应星期，X月X日=具体日期，X天后=+X天
 2. 时间：24小时制输出。上午X点→X:00，下午X点→X+12:00，晚上X点→X+12:00
 3. 识别到"X点到Y点"或"X:00-Y:00"等时间段 → type=event，分别填入time和endTime
@@ -21,6 +26,7 @@ const SYSTEM_PROMPT = `你是一个日程解析助手。根据用户输入的自
 
 只返回 JSON，格式如下：
 {"title":"事项标题","date":"YYYY-MM-DD","time":"HH:mm","endTime":"HH:mm或空","suggestedType":"todo|event|deadline","recognized":true|false}`
+}
 
 /**
  * 调用 DeepSeek API
@@ -37,7 +43,7 @@ function callDeepSeek(text) {
       data: {
         model: 'deepseek-chat',
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: buildSystemPrompt() },
           { role: 'user', content: text }
         ],
         temperature: 0,

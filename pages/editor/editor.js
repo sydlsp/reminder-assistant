@@ -1,6 +1,7 @@
 const { getEvents, upsertEvent } = require('../../utils/events')
 const { dateString, timeString, displayDate } = require('../../utils/date')
 const { aiParse } = require('../../utils/aiParser')
+const { registerReminder } = require('../../utils/reminder')
 
 Page({
   data: {
@@ -20,7 +21,7 @@ Page({
     time: timeString(),
     endTime: timeString(),
     remindBefore: 10,
-    reminderOptions: [0, 5, 10, 15, 30, 60],
+    reminderOptions: [0,1,5, 10, 15, 30, 60],
     reminderIndex: 2,
     source: 'manual',
     originalText: '',
@@ -200,7 +201,41 @@ Page({
     }
 
     upsertEvent(base)
-    wx.showToast({ title: editId ? '已更新事项' : '已加入日程', icon: 'success' })
-    setTimeout(() => wx.navigateBack(), 450)
+
+    const onComplete = () => {
+      wx.showToast({ title: editId ? '已更新事项' : '已加入日程', icon: 'success' })
+      setTimeout(() => wx.navigateBack(), 450)
+    }
+
+    // 设置了提醒时间 → 请求订阅消息授权
+    if (remindBefore > 0) {
+      this.requestReminder(base, onComplete)
+    } else {
+      onComplete()
+    }
+  },
+
+  requestReminder(base, callback) {
+    const tmplId = getApp().globalData.reminderTmplId
+    if (!tmplId) {
+      console.warn('[Reminder] 未配置 reminderTmplId，跳过')
+      callback()
+      return
+    }
+
+    wx.requestSubscribeMessage({
+      tmplIds: [tmplId],
+      success: (res) => {
+        if (res[tmplId] === 'accept') {
+          registerReminder(base, tmplId).then(id => {
+            if (id) wx.showToast({ title: '已设置提醒', icon: 'success' })
+          })
+        }
+      },
+      fail: (err) => {
+        console.log('[Reminder] 用户拒绝或失败:', err.errMsg)
+      },
+      complete: () => callback()
+    })
   }
 })

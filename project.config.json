@@ -31,9 +31,10 @@
   },
   "compileType": "miniprogram",
   "cloudfunctionRoot": "cloudfunctions/",
-  "libVersion": "3.7.9",
-  "appid": "wx3907b8a131c5b0cc",
+  "libVersion": "3.17.1",
+  "appid": "wxe30f8d24d1c512cd",
   "projectname": "reminder-assistant",
   "simulatorPluginLibVersion": {},
-  "editorSetting": {}
+  "editorSetting": {},
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/"
 }
