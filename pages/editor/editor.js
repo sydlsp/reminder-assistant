@@ -97,12 +97,12 @@ Page({
     this.setData({ loadingParse: true })
     const parsed = await aiParse(text)
     this.setData({ loadingParse: false })
-    if (!parsed.recognized) {
-      wx.showToast({ title: '未识别到时间信息，请手动填写', icon: 'none' })
-      return
-    }
     this.applyParse(parsed, { source: 'manual' })
-    wx.showToast({ title: '已智能解析，请确认', icon: 'success' })
+    if (parsed.recognized) {
+      wx.showToast({ title: '已智能解析，请确认', icon: 'success' })
+    } else {
+      wx.showToast({ title: '未识别到时间，已设为待办', icon: 'none' })
+    }
   },
 
   applyParse(parsed, extra) {
