@@ -110,7 +110,7 @@ Page({
     const item = getEvents().find(entry => entry.id === id)
     updateStatus(id, 'done')
     this.loadTimeline()
-    cancelReminders(id, item?.reminderId)
+    cancelReminders(id, item?.reminderId, item?.reminderIds || [])
   },
 
   editItem(e) {
@@ -128,7 +128,7 @@ Page({
           const item = getEvents().find(entry => entry.id === id)
           deleteEvent(id)
           this.loadTimeline()
-          cancelReminders(id, item?.reminderId)
+          cancelReminders(id, item?.reminderId, item?.reminderIds || [])
         }
       }
     })

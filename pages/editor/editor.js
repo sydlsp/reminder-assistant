@@ -21,6 +21,7 @@ Page({
     time: timeString(),
     endTime: timeString(),
     remindBefore: 10,
+    overdueReminder: true,
     reminderOptions: [0,1,5, 10, 15, 30, 60],
     reminderIndex: 2,
     source: 'manual',
@@ -71,6 +72,7 @@ Page({
       time: t,
       endTime: end ? timeString(end) : timeString(),
       remindBefore: event.remindBefore ?? 10,
+      overdueReminder: event.overdueReminder !== false,
       reminderIndex: reminderIndex >= 0 ? reminderIndex : 2,
       source: event.source || 'manual',
       originalText: event.originalText || '',
@@ -189,10 +191,13 @@ Page({
       remindBefore: this.data.reminderOptions[reminderIndex]
     })
   },
+  onOverdueReminderChange(event) {
+    this.setData({ overdueReminder: event.detail.value })
+  },
 
   async save() {
     if (this.data.saving) return
-    const { editId, type, title, date, time, endTime, remindBefore, source, originalText, location } = this.data
+    const { editId, type, title, date, time, endTime, remindBefore, overdueReminder, source, originalText, location } = this.data
     if (!title.trim()) {
       wx.showToast({ title: '请填写事项内容', icon: 'none' })
       return
@@ -207,6 +212,7 @@ Page({
       type,
       location,
       remindBefore,
+      overdueReminder: type === 'deadline' && overdueReminder,
       source,
       originalText,
       status: previous?.status || 'pending',
@@ -222,12 +228,12 @@ Page({
 
     try {
       // 编辑、完成或删除过的旧版本可能存在多条提醒，先统一取消，避免重复或错时提醒。
-      if (previous) await cancelReminders(base.id, previous.reminderId)
+      if (previous) await cancelReminders(base.id, previous.reminderId, previous.reminderIds || [])
       upsertEvent(base)
 
-      if (type !== 'todo' && remindBefore > 0) {
-        const reminderId = await this.requestReminder(base)
-        if (reminderId) upsertEvent({ ...base, reminderId })
+      const reminderIds = await this.requestReminders(base)
+      if (reminderIds.length) {
+        upsertEvent({ ...base, reminderId: reminderIds[0], reminderIds })
       }
 
       wx.showToast({ title: editId ? '已更新事项' : '已加入日程', icon: 'success' })
@@ -237,27 +243,40 @@ Page({
     }
   },
 
-  requestReminder(base) {
-    const tmplId = getApp().globalData.reminderTmplId
-    if (!tmplId) {
-      console.warn('[Reminder] 未配置 reminderTmplId，跳过')
-      return Promise.resolve(null)
+  requestReminders(base) {
+    const { reminderTmplId, overdueTmplId } = getApp().globalData
+    const needsAdvance = base.type !== 'todo' && base.remindBefore > 0 && Boolean(reminderTmplId)
+    let needsOverdue = base.type === 'deadline' && base.overdueReminder && Boolean(overdueTmplId)
+
+    if (needsAdvance && needsOverdue && reminderTmplId === overdueTmplId) {
+      console.warn('[Reminder] 提前提醒与逾期提醒不能共用同一一次性订阅模板，已跳过逾期提醒')
+      needsOverdue = false
+    }
+    if (base.type === 'deadline' && base.overdueReminder && !overdueTmplId) {
+      console.warn('[Reminder] 未配置 overdueTmplId，跳过逾期提醒')
+      wx.showToast({ title: '请先配置逾期消息模板', icon: 'none' })
+    }
+    if (!needsAdvance && !needsOverdue) {
+      return Promise.resolve([])
     }
 
+    const tmplIds = [needsAdvance && reminderTmplId, needsOverdue && overdueTmplId].filter(Boolean)
     return new Promise((resolve) => wx.requestSubscribeMessage({
-      tmplIds: [tmplId],
+      tmplIds,
       success: async (res) => {
-        if (res[tmplId] !== 'accept') {
-          resolve(null)
-          return
-        }
-        const reminderId = await registerReminder(base, tmplId)
-        if (reminderId) wx.showToast({ title: '已设置提醒', icon: 'success' })
-        resolve(reminderId)
+        const ids = await Promise.all([
+          needsAdvance && res[reminderTmplId] === 'accept'
+            ? registerReminder(base, reminderTmplId, 'advance') : null,
+          needsOverdue && res[overdueTmplId] === 'accept'
+            ? registerReminder(base, overdueTmplId, 'overdue') : null
+        ])
+        const reminderIds = ids.filter(Boolean)
+        if (reminderIds.length) wx.showToast({ title: '已设置提醒', icon: 'success' })
+        resolve(reminderIds)
       },
       fail: (err) => {
         console.log('[Reminder] 用户拒绝或失败:', err.errMsg)
-        resolve(null)
+        resolve([])
       }
     }))
   },
@@ -272,7 +291,7 @@ Page({
         if (!res.confirm) return
         const event = getEvents().find(item => item.id === this.data.editId)
         deleteEvent(this.data.editId)
-        await cancelReminders(this.data.editId, event?.reminderId)
+        await cancelReminders(this.data.editId, event?.reminderId, event?.reminderIds || [])
         wx.showToast({ title: '已删除', icon: 'success' })
         setTimeout(() => wx.navigateBack(), 350)
       }

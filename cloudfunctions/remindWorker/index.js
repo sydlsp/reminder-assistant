@@ -26,7 +26,7 @@ exports.main = async (event, context) => {
 
     // 打印每条待发送提醒的详情
     reminders.forEach(r => {
-      console.log(`[remindWorker] → [${r.title}] remindAt=${formatDate(r.remindAt)} openid=${r._openid}`)
+      console.log(`[remindWorker] → [${r.kind || 'advance'}] ${r.title} remindAt=${formatDate(r.remindAt)} openid=${r._openid}`)
     })
 
     const results = []
@@ -36,11 +36,7 @@ exports.main = async (event, context) => {
           touser: r._openid,
           templateId: r.templateId,
           page: r.page || '/pages/index/index',
-          data: {
-            thing4: { value: r.title.slice(0, 20) },
-            time2: { value: formatDate(r.eventTime) },
-            thing3: { value: r.location || '无' }
-          }
+          data: templateData(r)
         })
         await db.collection('reminders').doc(r._id).update({
           data: { status: 'sent', sentAt: now }
@@ -78,4 +74,23 @@ function formatDate(d) {
   const h = String(date.getUTCHours()).padStart(2, '0')
   const m = String(date.getUTCMinutes()).padStart(2, '0')
   return `${M}月${D}日 ${h}:${m}`
+}
+
+function reminderTitle(reminder) {
+  const title = reminder.kind === 'overdue' ? `已逾期：${reminder.title}` : reminder.title
+  return title.slice(0, 20)
+}
+
+function templateData(reminder) {
+  if (reminder.kind === 'overdue') {
+    return {
+      thing1: { value: reminder.title.slice(0, 20) },
+      time3: { value: formatDate(reminder.eventTime) }
+    }
+  }
+  return {
+    thing4: { value: reminderTitle(reminder) },
+    time2: { value: formatDate(reminder.eventTime) },
+    thing3: { value: reminder.location || '无' }
+  }
 }

@@ -75,6 +75,14 @@
     <picker wx:if="{{type !== 'todo'}}" mode="selector" range="{{reminderOptions}}" value="{{reminderIndex}}" bindchange="onReminderChange">
       <view class="picker">提前 {{remindBefore}} 分钟</view>
     </picker>
+
+    <view wx:if="{{type === 'deadline'}}" class="form-row overdue-reminder-row">
+      <view>
+        <view class="label">逾期提醒</view>
+        <view class="field-hint">截止后仍未完成时提醒一次</view>
+      </view>
+      <switch checked="{{overdueReminder}}" color="#16735f" bindchange="onOverdueReminderChange" />
+    </view>
   </view>
 
   <!-- 确认保存 -->

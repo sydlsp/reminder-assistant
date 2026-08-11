@@ -9,8 +9,9 @@ App({
   },
   globalData: {
     appName: '提醒助手',
-    // 订阅消息模板 ID：去 mp.weixin.qq.com → 功能 → 订阅消息 → 选用"待办事项提醒"模板后填入
-    // 模板字段要求：thing1(事项名称)、date2(提醒时间)、thing3(备注)
-    reminderTmplId: 'JOJYF_qTOzR7cIi48MouJ0B2HCB5485JhlO3ThXBGYo'
+    // 普通提醒模板：字段要求与 remindWorker 中发送的数据一致。
+    reminderTmplId: 'JOJYF_qTOzR7cIi48MouJ0B2HCB5485JhlO3ThXBGYo',
+    // 逾期提醒模板：待办事项=thing1，截止时间=time3。
+    overdueTmplId: 'N6dLCfjFKzwg6rzo3GnYN16tHpSyyxY8FDOoDuefN6E'
   }
 })

@@ -248,7 +248,7 @@ Page({
     const item = getEvents().find(entry => entry.id === id)
     updateStatus(id, 'done')
     this.loadSchedule()
-    cancelReminders(id, item?.reminderId)
+    cancelReminders(id, item?.reminderId, item?.reminderIds || [])
   },
 
   postpone(event) {
@@ -274,7 +274,7 @@ Page({
           const item = getEvents().find(entry => entry.id === id)
           deleteEvent(id)
           this.loadSchedule()
-          cancelReminders(id, item?.reminderId)
+          cancelReminders(id, item?.reminderId, item?.reminderIds || [])
         }
       }
     })

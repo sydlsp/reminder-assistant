@@ -36,6 +36,9 @@
 .form-row { display: flex; gap: 20rpx; margin-bottom: 32rpx; }
 .field { flex: 1; min-width: 0; }
 .picker { overflow: hidden; padding: 20rpx; background: #f5f7f6; border-radius: 14rpx; color: #263631; font-size: 27rpx; text-overflow: ellipsis; white-space: nowrap; }
+.overdue-reminder-row { align-items: center; justify-content: space-between; margin: -6rpx 0 8rpx; padding-top: 24rpx; border-top: 1rpx solid #edf0ee; }
+.overdue-reminder-row .label { margin-bottom: 6rpx; }
+.field-hint { color: #9aa49f; font-size: 22rpx; }
 
 /* 保存 */
 .save { margin-top: 8rpx; background: #176b55; border-radius: 20rpx; color: #fff; font-size: 30rpx; line-height: 96rpx; }
