@@ -49,17 +49,38 @@
 .event-card { display: flex; gap: 24rpx; padding: 30rpx 24rpx; background: #fff; border-radius: 20rpx; box-shadow: 0 8rpx 32rpx rgba(23, 64, 52, .05); }
 .event-card.is-done { opacity: .55; }
 .time { min-width: 86rpx; color: #176b55; font-size: 30rpx; font-weight: 700; }
-.deadline-time { color: #c76b2d; }
 .event-body { flex: 1; min-width: 0; }
 .event-title { overflow: hidden; color: #1a2824; font-size: 30rpx; font-weight: 600; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
 .event-location { margin-top: 6rpx; color: #8b7355; font-size: 22rpx; }
 .event-meta { margin-top: 10rpx; color: #82908b; font-size: 22rpx; }
 
-.todo-card { display: flex; align-items: flex-start; gap: 20rpx; padding: 28rpx 24rpx; background: #fff; border-radius: 20rpx; box-shadow: 0 8rpx 32rpx rgba(23, 64, 52, .05); }
-.todo-card.is-done { opacity: .55; }
-.todo-check { flex-shrink: 0; width: 52rpx; height: 52rpx; display: flex; align-items: center; justify-content: center; }
-.check-pending { color: #b6c6c0; font-size: 44rpx; }
-.check-done { color: #176b55; font-size: 36rpx; font-weight: 700; }
+/* 日程时间块卡片 */
+.schedule-card { position: relative; display: flex; align-items: center; min-height: 108rpx; overflow: hidden; padding: 20rpx 24rpx 20rpx 0; background: #fff; border: 1rpx solid #edf2ef; border-radius: 18rpx; box-shadow: 0 6rpx 20rpx rgba(23, 64, 52, .04); }
+.schedule-card::before { content: ''; align-self: stretch; width: 8rpx; margin-right: 20rpx; border-radius: 0 8rpx 8rpx 0; background: #2b8a6b; }
+.schedule-time { display: flex; flex-direction: column; flex-shrink: 0; align-items: center; width: 92rpx; }
+.schedule-start, .schedule-end { color: #176b55; font-size: 25rpx; font-weight: 600; line-height: 1.2; }
+.schedule-time-line { width: 2rpx; height: 14rpx; margin: 5rpx 0; background: #c5ded5; }
+.schedule-copy { flex: 1; min-width: 0; padding: 0 16rpx 0 18rpx; }
+.schedule-title { overflow: hidden; color: #1a2824; font-size: 29rpx; font-weight: 600; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.schedule-meta { display: flex; align-items: center; margin-top: 10rpx; overflow: hidden; font-size: 21rpx; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.schedule-location, .schedule-duration, .schedule-reminder { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.schedule-location { color: #8b7355; }
+.schedule-duration { color: #5d8f7e; }
+.schedule-reminder { color: #98a49f; }
+.schedule-meta-separator { flex-shrink: 0; margin: 0 9rpx; color: #d6dfda; }
+.schedule-complete { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 46rpx; height: 46rpx; margin: 0 34rpx 0 10rpx; border: 2rpx solid #9bc9bb; border-radius: 50%; box-sizing: border-box; }
+.schedule-complete-inner { width: 22rpx; height: 22rpx; border: 2rpx solid #176b55; border-radius: 50%; box-sizing: border-box; }
+.schedule-complete-done { background: #dce9e4; border-color: #dce9e4; color: #4f8976; font-size: 25rpx; font-weight: 700; line-height: 1; }
+.deadline-card { border-color: #f2e8df; }
+.deadline-card::before { background: #d88746; }
+.deadline-card .schedule-start, .deadline-card .schedule-end { color: #c76b2d; }
+.deadline-card .schedule-time-line { background: #edcfb4; }
+.todo-item-card { border-color: #e7ece9; }
+.todo-item-card::before { background: #9eaca7; }
+.schedule-card-done { min-height: 72rpx; padding-top: 14rpx; padding-bottom: 14rpx; box-shadow: none; opacity: .55; }
+.schedule-card-done::before { background: #b6c6c0; }
+.schedule-card-done .schedule-title { color: #66756f; font-size: 26rpx; font-weight: 500; text-decoration: line-through; }
+.schedule-card-done .schedule-meta { margin-top: 5rpx; font-size: 20rpx; }
 
 /* 已完成分组 */
 .done-group { margin-top: 24rpx; }

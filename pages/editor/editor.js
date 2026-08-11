@@ -40,6 +40,8 @@ Page({
       this.loadEvent(options.id)
     } else if (options.importClipboard === '1') {
       this.readClipboard()
+    } else {
+      this.setData({ showEditForm: true })
     }
   },
 
@@ -59,7 +61,8 @@ Page({
     this.setData({
       editId: id,
       isEdit: true,
-      showPreview: true,
+      showPreview: false,
+      showEditForm: true,
       type: event.type || 'event',
       typeIndex: typeIndex >= 0 ? typeIndex : 1,
       title: event.title || '',
@@ -106,10 +109,6 @@ Page({
     } else {
       wx.showToast({ title: '未识别到时间，已设为待办', icon: 'none' })
     }
-  },
-
-  manualFill() {
-    this.setData({ showPreview: true, showEditForm: true }, () => this.buildPreview())
   },
 
   applyParse(parsed, extra) {

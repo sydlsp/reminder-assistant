@@ -1,5 +1,5 @@
 const { getEvents, updateStatus, shiftEvent, deleteEvent } = require('../../utils/events')
-const { dateString, timeString, isSameDay, displayTime, displayTimeRange, displayDate, localDate } = require('../../utils/date')
+const { dateString, timeString, isSameDay, displayDate, localDate } = require('../../utils/date')
 
 // 每个时间线节点的预估高度，以及首项前为“现在”标记保留的安全空间（rpx）。
 const TIMELINE_NODE_HEIGHT = 180
@@ -87,16 +87,52 @@ Page({
     const todos = cardEvents
       .filter(e => e.type === 'todo' || (!e.type && !e.startAt && !e.deadline))
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map(e => ({
+        ...e,
+        locationLabel: e.location ? `@ ${e.location}` : ''
+      }))
 
     const schedules = cardEvents
       .filter(e => e.type === 'event' || (e.startAt && !e.type))
       .sort((a, b) => new Date(a.startAt) - new Date(b.startAt))
-      .map(e => ({ ...e, timeRange: displayTimeRange(e.startAt, e.endAt) }))
+      .map(e => {
+        const start = new Date(e.startAt)
+        const end = e.endAt ? new Date(e.endAt) : start
+        const remindBefore = Number(e.remindBefore)
+        const durationLabel = formatDuration(start, end)
+        const reminderLabel = Number.isFinite(remindBefore)
+          ? (remindBefore > 0 ? `提前 ${remindBefore} 分钟提醒` : '准时提醒')
+          : ''
+        return {
+          ...e,
+          startTime: timeString(start),
+          endTime: timeString(end),
+          locationLabel: e.location ? `@ ${e.location}` : '',
+          durationLabel,
+          reminderLabel,
+          hasLocationSeparator: Boolean(e.location && (durationLabel || reminderLabel)),
+          hasDurationSeparator: Boolean(durationLabel && reminderLabel)
+        }
+      })
 
     const deadlines = cardEvents
       .filter(e => e.type === 'deadline')
       .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
-      .map(e => ({ ...e, time: displayTime(e.deadline) }))
+      .map(e => {
+        const deadline = new Date(e.deadline)
+        const remindBefore = Number(e.remindBefore)
+        const reminderLabel = Number.isFinite(remindBefore)
+          ? (remindBefore > 0 ? `提前 ${remindBefore} 分钟提醒` : '准时提醒')
+          : ''
+        return {
+          ...e,
+          startTime: timeString(deadline),
+          endTime: '截止',
+          locationLabel: e.location ? `@ ${e.location}` : '',
+          reminderLabel,
+          hasLocationSeparator: Boolean(e.location && reminderLabel)
+        }
+      })
 
     const split = arr => [
       arr.filter(e => e.status !== 'done'),

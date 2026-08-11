@@ -48,36 +48,40 @@
           </view>
 
           <view wx:if="{{schedulesPending.length}}" class="event-list">
-            <view wx:for="{{schedulesPending}}" wx:key="id" class="event-card">
-              <view class="time">{{item.timeRange}}</view>
-              <view class="event-body">
-                <view class="event-title">{{item.title}}</view>
-                <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-                <view class="event-meta">{{item.source === 'clipboard' ? '来自微信消息' : '手动添加'}} · 提前 {{item.remindBefore}} 分钟提醒</view>
-                <view class="card-actions">
-                  <text class="action-pill complete" data-id="{{item.id}}" bindtap="complete">✓ 完成</text>
-                  <text class="action-pill postpone" data-id="{{item.id}}" bindtap="postpone">⏳ 延后</text>
-                  <text class="action-sep"></text>
-                  <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
-                  <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+            <view wx:for="{{schedulesPending}}" wx:key="id" class="schedule-card" data-id="{{item.id}}" bindtap="editItem">
+              <view class="schedule-time">
+                <text class="schedule-start">{{item.startTime}}</text>
+                <view class="schedule-time-line"></view>
+                <text class="schedule-end">{{item.endTime}}</text>
+              </view>
+              <view class="schedule-copy">
+                <view class="schedule-title">{{item.title}}</view>
+                <view wx:if="{{item.locationLabel || item.durationLabel || item.reminderLabel}}" class="schedule-meta">
+                  <text wx:if="{{item.locationLabel}}" class="schedule-location">{{item.locationLabel}}</text>
+                  <text wx:if="{{item.hasLocationSeparator}}" class="schedule-meta-separator">·</text>
+                  <text wx:if="{{item.durationLabel}}" class="schedule-duration">{{item.durationLabel}}</text>
+                  <text wx:if="{{item.hasDurationSeparator}}" class="schedule-meta-separator">·</text>
+                  <text wx:if="{{item.reminderLabel}}" class="schedule-reminder">{{item.reminderLabel}}</text>
                 </view>
               </view>
+              <view class="schedule-complete" data-id="{{item.id}}" catchtap="complete"><view class="schedule-complete-inner"></view></view>
             </view>
           </view>
 
           <view wx:if="{{schedulesDone.length}}" class="done-group">
             <view class="done-divider">已完成</view>
             <view class="event-list">
-              <view wx:for="{{schedulesDone}}" wx:key="id" class="event-card is-done">
-                <view class="time">{{item.timeRange}}</view>
-                <view class="event-body">
-                  <view class="event-title">{{item.title}}</view>
-                  <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-                  <view class="card-actions">
-                    <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
-                    <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
-                  </view>
+              <view wx:for="{{schedulesDone}}" wx:key="id" class="schedule-card schedule-card-done" data-id="{{item.id}}" bindtap="editItem">
+                <view class="schedule-time">
+                  <text class="schedule-start">{{item.startTime}}</text>
+                  <view class="schedule-time-line"></view>
+                  <text class="schedule-end">{{item.endTime}}</text>
                 </view>
+                <view class="schedule-copy">
+                  <view class="schedule-title">{{item.title}}</view>
+                  <view wx:if="{{item.location}}" class="schedule-meta">@ {{item.location}}</view>
+                </view>
+                <view class="schedule-complete schedule-complete-done">✓</view>
               </view>
             </view>
           </view>
@@ -93,35 +97,38 @@
           </view>
 
           <view wx:if="{{deadlinesPending.length}}" class="event-list">
-            <view wx:for="{{deadlinesPending}}" wx:key="id" class="event-card">
-              <view class="time deadline-time">{{item.time}}</view>
-              <view class="event-body">
-                <view class="event-title">{{item.title}}</view>
-                <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-                <view class="event-meta">截止 {{item.time}} · 提前 {{item.remindBefore}} 分钟提醒</view>
-                <view class="card-actions">
-                  <text class="action-pill complete" data-id="{{item.id}}" bindtap="complete">✓ 完成</text>
-                  <text class="action-sep"></text>
-                  <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
-                  <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+            <view wx:for="{{deadlinesPending}}" wx:key="id" class="schedule-card deadline-card" data-id="{{item.id}}" bindtap="editItem">
+              <view class="schedule-time">
+                <text class="schedule-start">{{item.startTime}}</text>
+                <view class="schedule-time-line"></view>
+                <text class="schedule-end">{{item.endTime}}</text>
+              </view>
+              <view class="schedule-copy">
+                <view class="schedule-title">{{item.title}}</view>
+                <view wx:if="{{item.locationLabel || item.reminderLabel}}" class="schedule-meta">
+                  <text wx:if="{{item.locationLabel}}" class="schedule-location">{{item.locationLabel}}</text>
+                  <text wx:if="{{item.hasLocationSeparator}}" class="schedule-meta-separator">·</text>
+                  <text wx:if="{{item.reminderLabel}}" class="schedule-reminder">{{item.reminderLabel}}</text>
                 </view>
               </view>
+              <view class="schedule-complete" data-id="{{item.id}}" catchtap="complete"><view class="schedule-complete-inner"></view></view>
             </view>
           </view>
 
           <view wx:if="{{deadlinesDone.length}}" class="done-group">
             <view class="done-divider">已完成</view>
             <view class="event-list">
-              <view wx:for="{{deadlinesDone}}" wx:key="id" class="event-card is-done">
-                <view class="time deadline-time">{{item.time}}</view>
-                <view class="event-body">
-                  <view class="event-title">{{item.title}}</view>
-                  <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-                  <view class="card-actions">
-                    <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
-                    <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
-                  </view>
+              <view wx:for="{{deadlinesDone}}" wx:key="id" class="schedule-card deadline-card schedule-card-done" data-id="{{item.id}}" bindtap="editItem">
+                <view class="schedule-time">
+                  <text class="schedule-start">{{item.startTime}}</text>
+                  <view class="schedule-time-line"></view>
+                  <text class="schedule-end">{{item.endTime}}</text>
                 </view>
+                <view class="schedule-copy">
+                  <view class="schedule-title">{{item.title}}</view>
+                  <view wx:if="{{item.location}}" class="schedule-meta">@ {{item.location}}</view>
+                </view>
+                <view class="schedule-complete schedule-complete-done">✓</view>
               </view>
             </view>
           </view>
@@ -137,36 +144,24 @@
           </view>
 
           <view wx:if="{{todosPending.length}}" class="event-list">
-            <view wx:for="{{todosPending}}" wx:key="id" class="todo-card">
-              <view class="todo-check" data-id="{{item.id}}" bindtap="complete">
-                <text class="check-pending">○</text>
+            <view wx:for="{{todosPending}}" wx:key="id" class="schedule-card todo-item-card" data-id="{{item.id}}" bindtap="editItem">
+              <view class="schedule-copy">
+                <view class="schedule-title">{{item.title}}</view>
+                <view wx:if="{{item.locationLabel}}" class="schedule-meta"><text class="schedule-location">{{item.locationLabel}}</text></view>
               </view>
-              <view class="event-body">
-                <view class="event-title">{{item.title}}</view>
-                <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-                <view class="card-actions">
-                  <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
-                  <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
-                </view>
-              </view>
+              <view class="schedule-complete" data-id="{{item.id}}" catchtap="complete"><view class="schedule-complete-inner"></view></view>
             </view>
           </view>
 
           <view wx:if="{{todosDone.length}}" class="done-group">
             <view class="done-divider">已完成</view>
             <view class="event-list">
-              <view wx:for="{{todosDone}}" wx:key="id" class="todo-card is-done">
-                <view class="todo-check">
-                  <text class="check-done">✓</text>
+              <view wx:for="{{todosDone}}" wx:key="id" class="schedule-card todo-item-card schedule-card-done" data-id="{{item.id}}" bindtap="editItem">
+                <view class="schedule-copy">
+                  <view class="schedule-title">{{item.title}}</view>
+                  <view wx:if="{{item.location}}" class="schedule-meta">@ {{item.location}}</view>
                 </view>
-                <view class="event-body">
-                  <view class="event-title">{{item.title}}</view>
-                  <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-                  <view class="card-actions">
-                    <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
-                    <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
-                  </view>
-                </view>
+                <view class="schedule-complete schedule-complete-done">✓</view>
               </view>
             </view>
           </view>

@@ -36,10 +36,27 @@ function displayDate(date) {
 }
 
 const WD = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 0, '天': 0 }
+const CHINESE_DIGITS = { '零': 0, '〇': 0, '一': 1, '二': 2, '两': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 }
+
+function parseChineseTimeNumber(value) {
+  if (!value.includes('十')) return CHINESE_DIGITS[value]
+  const [tens, ones] = value.split('十')
+  const tensValue = tens ? CHINESE_DIGITS[tens] : 1
+  const onesValue = ones ? CHINESE_DIGITS[ones] : 0
+  if (tensValue === undefined || onesValue === undefined) return NaN
+  return tensValue * 10 + onesValue
+}
+
+function normalizeChineseTime(text) {
+  return text.replace(/([零〇一二两三四五六七八九十]{1,3})(?=[点:：])/g, (value) => {
+    const number = parseChineseTimeNumber(value)
+    return Number.isInteger(number) && number >= 0 && number <= 23 ? String(number) : value
+  })
+}
 
 function parseClipboard(text) {
   const now = new Date()
-  const raw = text.replace(/\s+/g, ' ').trim()
+  const raw = normalizeChineseTime(text.replace(/\s+/g, ' ').trim())
   const parsed = new Date(now)
   let matchedDate = false
   let matchedTime = false
@@ -54,7 +71,7 @@ function parseClipboard(text) {
   // 大后天 / 后天 / 明天 / 今天
   const relDay = raw.match(/大后天|后天|明天|明日|今天|今日/)
   if (relDay) {
-    const map = { '大后天': 3, '后天': 2, '明天': 2, '明日': 2, '今天': 0, '今日': 0 }
+    const map = { '大后天': 3, '后天': 2, '明天': 1, '明日': 1, '今天': 0, '今日': 0 }
     parsed.setDate(parsed.getDate() + (map[relDay[0]] || 0))
     matchedDate = true
     cleanedTitle = cleanedTitle.replace(relDay[0], '')
@@ -140,11 +157,12 @@ function parseClipboard(text) {
 
   // 下午2点到4点 / 14点到16点 / 上午9点到11点半
   if (!matchedTime) {
-    const tr = raw.match(/(?:上午|下午|晚上|中午)?\s*(\d{1,2})[点:：]\s*(?:半\s*)?[-~至到]\s*(?:上午|下午|晚上|中午)?\s*(\d{1,2})[点:：]\s*(半)?/)
+    const tr = raw.match(/(?:上午|下午|晚上|中午)?\s*(\d{1,2})[点:：]\s*(半)?\s*[-~至到]\s*(?:上午|下午|晚上|中午)?\s*(\d{1,2})[点:：]\s*(半)?/)
     if (tr) {
       hour = Number(tr[1])
-      endHour = Number(tr[2])
-      endMinute = tr[3] ? 30 : 0
+      minute = tr[2] ? 30 : 0
+      endHour = Number(tr[3])
+      endMinute = tr[4] ? 30 : 0
       const isPM = /下午|晚上|今晚/.test(raw)
       if (isPM && hour < 12) hour += 12
       if (isPM && endHour < 12) endHour += 12
@@ -155,10 +173,10 @@ function parseClipboard(text) {
 
   // 单个时间：上午/下午/晚上/中午 X点/X:XX
   if (!matchedTime) {
-    const tm = raw.match(/(?:上午|下午|晚上|中午)?\s*(\d{1,2})[点:：](\d{2})?/)
+    const tm = raw.match(/(?:上午|下午|晚上|中午)?\s*(\d{1,2})[点:：](?:(\d{2})|(半))?/)
     if (tm) {
       hour = Number(tm[1])
-      minute = Number(tm[2] || 0)
+      minute = tm[3] ? 30 : Number(tm[2] || 0)
       if (/下午|晚上|今晚/.test(raw) && hour < 12) hour += 12
       if (/中午/.test(raw) && hour < 12) hour += 12
       matchedTime = true

@@ -6,11 +6,11 @@
 
   <!-- 输入区 -->
   <view class="input-area">
+    <view class="label content-label">事项内容</view>
     <textarea class="title-input" placeholder="例如：明天下午3点开会讨论需求" value="{{title}}" maxlength="180" auto-height bindinput="onTitleInput" />
     <view class="parse-row">
       <text class="parse-btn {{loadingParse ? 'loading' : ''}}" bindtap="parseTitle">{{loadingParse ? '解析中...' : '智能解析'}}</text>
       <button class="clipboard-btn" loading="{{loadingClipboard}}" bindtap="readClipboard">从微信导入</button>
-      <text class="parse-btn manual-btn" bindtap="manualFill">手动填写</text>
     </view>
   </view>
 
@@ -30,14 +30,11 @@
   </view>
 
   <!-- 修改区（可折叠） -->
-  <view wx:if="{{showPreview && showEditForm}}" class="form">
+  <view wx:if="{{showEditForm}}" class="form">
     <view class="label">事务类型</view>
     <picker mode="selector" range="{{typeOptions}}" range-key="label" value="{{typeIndex}}" bindchange="onTypeChange">
       <view class="picker">{{typeOptions[typeIndex].label}} · {{typeOptions[typeIndex].desc}}</view>
     </picker>
-
-    <view class="label" style="margin-top: 34rpx;">事项</view>
-    <textarea class="title-input" placeholder="事项内容" value="{{title}}" maxlength="180" auto-height bindinput="onTitleInput" />
 
     <view class="label" style="margin-top: 34rpx;">地点（选填）</view>
     <input class="location-input" placeholder="如：302会议室" value="{{location}}" maxlength="50" bindinput="onLocationInput" />
@@ -81,6 +78,6 @@
   </view>
 
   <!-- 确认保存 -->
-  <button wx:if="{{showPreview}}" class="save" bindtap="save">{{isEdit ? '确认更新' : '确认并保存'}}</button>
+  <button wx:if="{{showPreview || showEditForm}}" class="save" bindtap="save">{{isEdit ? '确认更新' : '确认并保存'}}</button>
   <button wx:if="{{isEdit}}" class="delete-item" bindtap="removeItem">删除此事项</button>
 </view>
