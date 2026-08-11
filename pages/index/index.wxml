@@ -175,15 +175,14 @@
     <swiper-item>
       <scroll-view scroll-y class="swiper-scroll" style="height: {{swiperHeight}}px" enhanced show-scrollbar="{{false}}">
         <view wx:if="{{hasTimelineItems}}" class="timeline-wrap">
-          <!-- 当前时间红线 -->
-          <view wx:if="{{isToday && nowLineTop >= 0 && pendingTimeline.length}}" class="now-line" style="top: {{nowLineTop}}rpx">
-            <view class="now-dot"></view>
-            <view class="now-label">现在</view>
-          </view>
-
           <!-- 未完成 -->
           <block wx:for="{{pendingTimeline}}" wx:key="id">
-            <view class="tl-node">
+            <view wx:if="{{item.showNowBefore}}" class="now-marker">
+              <view class="now-marker-gutter"><view class="now-marker-dot"></view></view>
+              <view class="now-marker-content"><view class="now-marker-dash"></view><view class="now-marker-label">{{nowLabel}}</view><view class="now-marker-dash"></view></view>
+            </view>
+
+            <view class="tl-node {{item.isOngoing ? 'is-ongoing' : ''}}">
               <view class="tl-gutter">
                 <view class="tl-time">{{item.timeLabel}}</view>
                 <view class="tl-dot {{item.type === 'deadline' ? 'dot-deadline' : 'dot-event'}}">
@@ -195,10 +194,11 @@
                 <view class="tl-main-row">
                   <view class="tl-copy">
                     <view class="tl-title">{{item.title}}</view>
-                    <view wx:if="{{item.location || item.timelineMeta}}" class="tl-subline">
+                    <view wx:if="{{item.location || item.timelineMeta || item.isOngoing}}" class="tl-subline">
                       <text wx:if="{{item.location}}" class="tl-location">@ {{item.location}}</text>
                       <text wx:if="{{item.location && item.timelineMeta}}" class="tl-sub-separator">·</text>
                       <text wx:if="{{item.timelineMeta}}" class="tl-duration">{{item.timelineMeta}}</text>
+                      <text wx:if="{{item.isOngoing}}" class="tl-ongoing">进行中 · {{item.remainingLabel}}</text>
                     </view>
                   </view>
                   <text wx:if="{{item.type === 'deadline'}}" class="tl-type-hint">截止</text>
@@ -208,7 +208,17 @@
                 </view>
               </view>
             </view>
+
+            <view wx:if="{{item.showNowAfter}}" class="now-marker">
+              <view class="now-marker-gutter"><view class="now-marker-dot"></view></view>
+              <view class="now-marker-content"><view class="now-marker-dash"></view><view class="now-marker-label">{{nowLabel}}</view><view class="now-marker-dash"></view></view>
+            </view>
           </block>
+
+          <view wx:if="{{nowMarkerAfterList}}" class="now-marker">
+            <view class="now-marker-gutter"><view class="now-marker-dot"></view></view>
+            <view class="now-marker-content"><view class="now-marker-dash"></view><view class="now-marker-label">{{nowLabel}}</view><view class="now-marker-dash"></view></view>
+          </view>
 
           <!-- 已完成 -->
           <block wx:if="{{doneTimeline.length}}">

@@ -97,17 +97,20 @@
 .action.delete { color: #d45252; font-size: 28rpx; font-weight: 600; padding: 0 6rpx; }
 
 /* ===== 时间线视图 ===== */
-.timeline-wrap { position: relative; padding: 56rpx 0 20rpx; }
+.timeline-wrap { padding: 20rpx 0; }
 
-/* 当前时间红线 */
-.now-line { position: absolute; left: 0; right: 0; display: flex; align-items: center; height: 0; z-index: 4; pointer-events: none; }
-.now-line::after { content: ''; position: absolute; left: 42rpx; right: 0; top: 50%; height: 2rpx; border-top: 2rpx dashed #FF5E5E; }
-.now-dot { position: absolute; left: 35rpx; top: 50%; width: 16rpx; height: 16rpx; margin-top: -8rpx; background: #FF5E5E; border-radius: 50%; }
-.now-label { position: absolute; left: 80rpx; top: 50%; transform: translateY(-50%); color: #FF5E5E; font-size: 22rpx; font-weight: 600; background: #F7F8FA; padding: 2rpx 10rpx; border-radius: 6rpx; }
+/* 当前时间分隔行：参与正常布局，避免与事项文字和圆点重叠。 */
+.now-marker { display: flex; align-items: center; min-height: 48rpx; margin: 0 24rpx 4rpx 0; }
+.now-marker-gutter { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 90rpx; }
+.now-marker-dot { width: 16rpx; height: 16rpx; background: #e96868; border-radius: 50%; box-shadow: 0 0 0 4rpx #fff1f1; }
+.now-marker-content { display: flex; flex: 1; align-items: center; min-width: 0; padding-left: 20rpx; }
+.now-marker-dash { flex: 1; min-width: 12rpx; border-top: 2rpx dashed #f1a6a6; }
+.now-marker-label { flex-shrink: 0; margin: 0 12rpx; padding: 4rpx 12rpx; border-radius: 999rpx; background: #fff1f1; color: #dd6060; font-size: 21rpx; font-weight: 600; line-height: 1.3; }
 
 .tl-node { display: flex; position: relative; z-index: 1; }
 .tl-node:last-child .tl-line { display: none; }
 .tl-node.is-done { opacity: .5; }
+.tl-node.is-ongoing .dot-event { background: #e96868; box-shadow: 0 0 0 4rpx #fff1f1; }
 
 .tl-gutter { position: relative; width: 90rpx; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding-top: 10rpx; }
 .tl-time { color: #176b55; font-size: 24rpx; font-weight: 600; }
@@ -126,6 +129,7 @@
 .tl-location { color: #8b7355; }
 .tl-duration { color: #8b9692; }
 .tl-sub-separator { color: #c3cfca; }
+.tl-ongoing { flex-shrink: 0; padding: 2rpx 8rpx; border-radius: 7rpx; background: #fff0f0; color: #dd6060; font-size: 19rpx; font-weight: 600; }
 .tl-type-hint { flex-shrink: 0; margin: 2rpx 14rpx 0 0; padding: 3rpx 10rpx; border-radius: 8rpx; background: #fdf0e3; color: #c76b2d; font-size: 20rpx; line-height: 1.3; }
 .timeline-complete { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 42rpx; height: 42rpx; margin: 0 28rpx 0 0; border: 2rpx solid #9bc9bb; border-radius: 50%; box-sizing: border-box; }
 .timeline-complete-inner { width: 20rpx; height: 20rpx; border: 2rpx solid #176b55; border-radius: 50%; box-sizing: border-box; }

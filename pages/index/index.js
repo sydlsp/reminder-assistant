@@ -2,10 +2,6 @@ const { getEvents, updateStatus, shiftEvent, deleteEvent } = require('../../util
 const { dateString, timeString, isSameDay, displayDate, localDate } = require('../../utils/date')
 const { cancelReminders } = require('../../utils/reminder')
 
-// 每个时间线节点的预估高度，以及首项前为“现在”标记保留的安全空间（rpx）。
-const TIMELINE_NODE_HEIGHT = 180
-const NOW_LINE_TOP_INSET = 34
-
 function formatDuration(start, end) {
   const minutes = Math.round((end.getTime() - start.getTime()) / 60000)
   if (minutes <= 0) return ''
@@ -13,6 +9,14 @@ function formatDuration(start, end) {
   const hours = Math.floor(minutes / 60)
   const restMinutes = minutes % 60
   return restMinutes ? `${hours} 小时 ${restMinutes} 分钟` : `${hours} 小时`
+}
+
+function formatRemaining(minutes) {
+  if (minutes <= 1) return '即将结束'
+  if (minutes < 60) return `还剩 ${minutes} 分钟`
+  const hours = Math.floor(minutes / 60)
+  const restMinutes = minutes % 60
+  return restMinutes ? `还剩 ${hours} 小时 ${restMinutes} 分钟` : `还剩 ${hours} 小时`
 }
 
 Page({
@@ -37,7 +41,8 @@ Page({
     pendingTimeline: [],
     doneTimeline: [],
     hasTimelineItems: false,
-    nowLineTop: -1
+    nowLabel: '',
+    nowMarkerAfterList: false
   },
 
   onLoad(options) {
@@ -67,6 +72,29 @@ Page({
 
   onShow() {
     this.loadSchedule()
+    this.startNowTicker()
+  },
+
+  onHide() {
+    this.stopNowTicker()
+  },
+
+  onUnload() {
+    this.stopNowTicker()
+  },
+
+  startNowTicker() {
+    this.stopNowTicker()
+    this.nowTimer = setInterval(() => {
+      if (this.data.selectedDate === dateString()) this.loadSchedule()
+    }, 60 * 1000)
+  },
+
+  stopNowTicker() {
+    if (this.nowTimer) {
+      clearInterval(this.nowTimer)
+      this.nowTimer = null
+    }
   },
 
   loadSchedule() {
@@ -161,7 +189,8 @@ Page({
           location: e.location || '', status: e.status,
           timeLabel: timeString(start),
           timelineMeta: formatDuration(start, end),
-          sortMin: start.getHours() * 60 + start.getMinutes()
+          sortMin: start.getHours() * 60 + start.getMinutes(),
+          endMin: end.getHours() * 60 + end.getMinutes()
         }
       }
       const dl = new Date(e.deadline)
@@ -170,21 +199,38 @@ Page({
         location: e.location || '', status: e.status,
         timeLabel: timeString(dl),
         timelineMeta: '',
-        sortMin: dl.getHours() * 60 + dl.getMinutes()
+        sortMin: dl.getHours() * 60 + dl.getMinutes(),
+        endMin: dl.getHours() * 60 + dl.getMinutes()
       }
     }).sort((a, b) => a.sortMin - b.sortMin)
 
     const pendingTimeline = timelineItems.filter(e => e.status !== 'done')
     const doneTimeline = timelineItems.filter(e => e.status === 'done')
 
-    let nowLineTop = -1
+    let nowLabel = ''
+    let nowMarkerAfterList = false
     if (this.data.selectedDate === today) {
       const nowMin = now.getHours() * 60 + now.getMinutes()
-      let idx = pendingTimeline.length
-      for (let i = 0; i < pendingTimeline.length; i++) {
-        if (pendingTimeline[i].sortMin > nowMin) { idx = i; break }
+      nowLabel = `现在 ${timeString(now)}`
+      const ongoingIndex = pendingTimeline.findIndex(item =>
+        item.type === 'event' && item.sortMin <= nowMin && item.endMin > nowMin
+      )
+
+      if (ongoingIndex >= 0) {
+        const current = pendingTimeline[ongoingIndex]
+        current.isOngoing = true
+        current.remainingLabel = formatRemaining(current.endMin - nowMin)
+        current.showNowAfter = true
+      } else {
+        const nextIndex = pendingTimeline.findIndex(item => item.sortMin > nowMin)
+        if (nextIndex === 0) {
+          pendingTimeline[0].showNowBefore = true
+        } else if (nextIndex > 0) {
+          pendingTimeline[nextIndex - 1].showNowAfter = true
+        } else if (pendingTimeline.length) {
+          nowMarkerAfterList = true
+        }
       }
-      nowLineTop = NOW_LINE_TOP_INSET + idx * TIMELINE_NODE_HEIGHT
     }
 
     this.setData({
@@ -197,7 +243,8 @@ Page({
       totalCount: cardEvents.length,
       pendingTimeline, doneTimeline,
       hasTimelineItems: timelineItems.length > 0,
-      nowLineTop
+      nowLabel,
+      nowMarkerAfterList
     })
   },
 
