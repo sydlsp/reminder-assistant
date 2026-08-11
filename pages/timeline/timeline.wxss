@@ -1,24 +1,4 @@
-/* ===== 整体布局 ===== */
-.page-container {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.header-area {
-  flex-shrink: 0;
-  padding: 48rpx 32rpx 0;
-}
-
-.content-swiper {
-  flex: 1;
-}
-
-.swiper-scroll {
-  padding: 0 32rpx 80rpx;
-}
-
-/* ===== 共享头部 ===== */
+.page { padding: 48rpx 32rpx 80rpx; }
 .hero { padding: 12rpx 8rpx 38rpx; }
 .eyebrow { color: #6c7774; font-size: 24rpx; letter-spacing: 2rpx; }
 .headline { margin-top: 14rpx; color: #142c25; font-size: 48rpx; font-weight: 700; line-height: 1.28; }
@@ -37,46 +17,10 @@
 .view-switch { display: flex; justify-content: center; gap: 32rpx; margin-bottom: 28rpx; }
 .switch-tab { color: #84918d; font-size: 26rpx; padding: 4rpx 0; }
 .switch-tab.active { color: #176b55; font-weight: 600; border-bottom: 4rpx solid #176b55; }
+.switch-tab.muted { cursor: pointer; }
 
-/* ===== 卡片视图 ===== */
-.section { margin-bottom: 48rpx; }
-.section-header { display: flex; align-items: center; gap: 14rpx; margin-bottom: 20rpx; }
-.section-title { color: #263531; font-size: 30rpx; font-weight: 600; }
-.section-badge { padding: 4rpx 16rpx; background: #e7eeeb; border-radius: 100rpx; color: #176b55; font-size: 22rpx; }
-.empty-small { padding: 32rpx 24rpx; background: #fff; border-radius: 18rpx; color: #82908b; font-size: 25rpx; text-align: center; }
-
-.event-list { display: flex; flex-direction: column; gap: 18rpx; }
-.event-card { display: flex; gap: 24rpx; padding: 30rpx 24rpx; background: #fff; border-radius: 20rpx; box-shadow: 0 8rpx 32rpx rgba(23, 64, 52, .05); }
-.event-card.is-done { opacity: .55; }
-.time { min-width: 86rpx; color: #176b55; font-size: 30rpx; font-weight: 700; }
-.deadline-time { color: #c76b2d; }
-.event-body { flex: 1; min-width: 0; }
-.event-title { overflow: hidden; color: #1a2824; font-size: 30rpx; font-weight: 600; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
-.event-location { margin-top: 6rpx; color: #8b7355; font-size: 22rpx; }
-.event-meta { margin-top: 10rpx; color: #82908b; font-size: 22rpx; }
-
-.todo-card { display: flex; align-items: flex-start; gap: 20rpx; padding: 28rpx 24rpx; background: #fff; border-radius: 20rpx; box-shadow: 0 8rpx 32rpx rgba(23, 64, 52, .05); }
-.todo-card.is-done { opacity: .55; }
-.todo-check { flex-shrink: 0; width: 52rpx; height: 52rpx; display: flex; align-items: center; justify-content: center; }
-.check-pending { color: #b6c6c0; font-size: 44rpx; }
-.check-done { color: #176b55; font-size: 36rpx; font-weight: 700; }
-
-/* 已完成分组 */
-.done-group { margin-top: 24rpx; }
-.done-divider { padding: 16rpx 8rpx; color: #6c7774; font-size: 23rpx; border-top: 2rpx solid #dfe6e3; }
-
-/* 操作按钮 */
-.card-actions { display: flex; align-items: center; gap: 8rpx; margin-top: 22rpx; }
-.action-pill { padding: 6rpx 20rpx; border-radius: 10rpx; font-size: 23rpx; font-weight: 600; }
-.action-pill.complete { background: #e0f0ea; color: #176b55; }
-.action-pill.postpone { background: #eef0f2; color: #5a6965; }
-.action-sep { width: 2rpx; height: 24rpx; margin: 0 8rpx; background: #dce3e0; }
-.action { color: #77847f; font-size: 23rpx; }
-.action.edit { color: #597ef7; }
-.action.delete { color: #d45252; font-size: 28rpx; font-weight: 600; padding: 0 6rpx; }
-
-/* ===== 时间线视图 ===== */
-.timeline-wrap { position: relative; padding: 56rpx 0 20rpx; }
+/* ══════ 时间线 ══════ */
+.timeline-wrap { position: relative; padding: 10rpx 0 20rpx; }
 
 /* 当前时间红线 */
 .now-line { position: absolute; left: 0; right: 0; display: flex; align-items: center; height: 0; z-index: 4; pointer-events: none; }
@@ -106,6 +50,18 @@
 .tl-location { margin-top: 8rpx; color: #8b7355; font-size: 22rpx; }
 .tl-actions { display: flex; align-items: center; gap: 8rpx; margin-top: 18rpx; }
 .tl-done-divider { margin: 20rpx 0 16rpx; padding: 12rpx 0 12rpx 110rpx; }
+
+/* 操作按钮 */
+.action-pill { padding: 6rpx 20rpx; border-radius: 10rpx; font-size: 23rpx; font-weight: 600; }
+.action-pill.complete { background: #e0f0ea; color: #176b55; }
+.action-sep { width: 2rpx; height: 24rpx; margin: 0 8rpx; background: #dce3e0; }
+.action { color: #77847f; font-size: 23rpx; }
+.action.edit { color: #597ef7; }
+.action.delete { color: #d45252; font-size: 28rpx; font-weight: 600; padding: 0 6rpx; }
+
+/* 已完成分组 */
+.done-group { margin-top: 24rpx; }
+.done-divider { padding: 16rpx 8rpx; color: #6c7774; font-size: 23rpx; border-top: 2rpx solid #dfe6e3; }
 
 /* 空状态 */
 .empty { margin-top: 28rpx; padding: 74rpx 34rpx; background: #fff; border-radius: 24rpx; text-align: center; }

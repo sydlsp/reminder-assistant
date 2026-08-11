@@ -1,0 +1,97 @@
+<view class="page">
+  <view class="hero">
+    <view class="eyebrow">时间线</view>
+    <view class="headline">{{scheduleLabel}}</view>
+    <view class="date">共 {{pendingTimeline.length + doneTimeline.length}} 项</view>
+  </view>
+
+  <view class="date-nav">
+    <text class="nav-button" data-offset="-1" bindtap="changeDay">‹</text>
+    <picker mode="date" value="{{selectedDate}}" bindchange="selectDate">
+      <view class="selected-date">{{scheduleLabel}} <text class="calendar">⌄</text></view>
+    </picker>
+    <text class="nav-button" data-offset="1" bindtap="changeDay">›</text>
+  </view>
+  <text wx:if="{{!isToday}}" class="today-link" bindtap="goToday">回到今天</text>
+
+  <view class="quick-actions">
+    <button class="primary" bindtap="addEvent">＋ 添加事项</button>
+    <button class="secondary" bindtap="goCards">卡片视图</button>
+  </view>
+
+  <view class="view-switch">
+    <text class="switch-tab muted" bindtap="goCards">卡片视图</text>
+    <text class="switch-tab active">时间线</text>
+  </view>
+
+  <view wx:if="{{hasTimelineItems}}" class="timeline-wrap">
+    <!-- 当前时间红线 -->
+    <view wx:if="{{isToday && nowLineTop >= 0 && pendingTimeline.length}}" class="now-line" style="top: {{nowLineTop}}rpx">
+      <view class="now-dot"></view>
+      <view class="now-label">现在</view>
+    </view>
+
+    <!-- 未完成 -->
+    <block wx:for="{{pendingTimeline}}" wx:key="id">
+      <view class="tl-node">
+        <view class="tl-gutter">
+          <view class="tl-time">{{item.timeLabel}}</view>
+          <view class="tl-dot {{item.type === 'deadline' ? 'dot-deadline' : 'dot-event'}}">
+            {{item.type === 'deadline' ? '⚑' : ''}}
+          </view>
+          <view class="tl-line"></view>
+        </view>
+        <view class="tl-card">
+          <view class="tl-card-header">
+            <text class="tl-badge {{item.type === 'deadline' ? 'badge-deadline' : 'badge-event'}}">
+              {{item.type === 'deadline' ? '截止' : '日程'}}
+            </text>
+            <text class="tl-range">{{item.timeRange}}</text>
+          </view>
+          <view class="tl-title">{{item.title}}</view>
+          <view wx:if="{{item.location}}" class="tl-location">@ {{item.location}}</view>
+          <view class="tl-actions">
+            <text class="action-pill complete" data-id="{{item.id}}" bindtap="complete">✓ 完成</text>
+            <text class="action-sep"></text>
+            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 已完成 -->
+    <block wx:if="{{doneTimeline.length}}">
+      <view class="done-divider tl-done-divider">已完成</view>
+      <block wx:for="{{doneTimeline}}" wx:key="id">
+        <view class="tl-node is-done">
+          <view class="tl-gutter">
+            <view class="tl-time">{{item.timeLabel}}</view>
+            <view class="tl-dot dot-done">✓</view>
+            <view class="tl-line"></view>
+          </view>
+          <view class="tl-card">
+            <view class="tl-card-header">
+              <text class="tl-badge {{item.type === 'deadline' ? 'badge-deadline' : 'badge-event'}}">
+                {{item.type === 'deadline' ? '截止' : '日程'}}
+              </text>
+              <text class="tl-range">{{item.timeRange}}</text>
+            </view>
+            <view class="tl-title">{{item.title}}</view>
+            <view wx:if="{{item.location}}" class="tl-location">@ {{item.location}}</view>
+            <view class="tl-actions">
+              <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+              <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </block>
+  </view>
+
+  <view wx:else class="empty">
+    <view class="empty-icon">—</view>
+    <view class="empty-title">这一天暂无安排</view>
+    <view class="empty-copy">点击「添加事项」为这一天安排日程或截止任务吧</view>
+  </view>
+</view>

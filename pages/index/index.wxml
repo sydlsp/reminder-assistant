@@ -1,153 +1,255 @@
-<view class="page">
-  <view class="hero">
-    <view class="eyebrow">我的日程</view>
-    <view class="headline">把每一天安排得更清楚。</view>
-    <view class="date">{{scheduleLabel}} · 共 {{totalCount}} 项 · 已完成 {{completedCount}} 项</view>
-  </view>
-
-  <view class="date-nav">
-    <text class="nav-button" data-offset="-1" bindtap="changeDay">‹</text>
-    <picker mode="date" value="{{selectedDate}}" bindchange="selectDate">
-      <view class="selected-date">{{scheduleLabel}} <text class="calendar">⌄</text></view>
-    </picker>
-    <text class="nav-button" data-offset="1" bindtap="changeDay">›</text>
-  </view>
-  <text wx:if="{{!isToday}}" class="today-link" bindtap="goToday">回到今天</text>
-
-  <view class="quick-actions">
-    <button class="primary" bindtap="addEvent">＋ 添加事项</button>
-    <button class="secondary" bindtap="importClipboard">从微信消息导入</button>
-  </view>
-
-  <!-- 日程安排 -->
-  <view class="section">
-    <view class="section-header">
-      <view class="section-title">日程安排</view>
-      <view class="section-badge">{{schedulesPending.length + schedulesDone.length}}</view>
+<view class="page-container" style="height: {{pageHeight}}px">
+  <!-- ===== 共享头部 ===== -->
+  <view class="header-area">
+    <!-- 卡片视图 Hero -->
+    <view wx:if="{{currentView === 0}}" class="hero">
+      <view class="eyebrow">我的日程</view>
+      <view class="headline">把每一天安排得更清楚。</view>
+      <view class="date">{{scheduleLabel}} · 共 {{totalCount}} 项 · 已完成 {{completedCount}} 项</view>
     </view>
 
-    <view wx:if="{{schedulesPending.length}}" class="event-list">
-      <view wx:for="{{schedulesPending}}" wx:key="id" class="event-card">
-        <view class="time">{{item.timeRange}}</view>
-        <view class="event-body">
-          <view class="event-title">{{item.title}}</view>
-          <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-          <view class="event-meta">{{item.source === 'clipboard' ? '来自微信消息' : '手动添加'}} · 提前 {{item.remindBefore}} 分钟提醒</view>
-          <view class="card-actions">
-            <text class="action" data-id="{{item.id}}" bindtap="complete">完成</text>
-            <text class="action muted" data-id="{{item.id}}" bindtap="postpone">延后 1 小时</text>
-            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
-            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
+    <!-- 时间线 Hero -->
+    <view wx:else class="hero">
+      <view class="eyebrow">时间线</view>
+      <view class="headline">{{scheduleLabel}}</view>
+      <view class="date">共 {{pendingTimeline.length + doneTimeline.length}} 项</view>
+    </view>
+
+    <view class="date-nav">
+      <text class="nav-button" data-offset="-1" bindtap="changeDay">‹</text>
+      <picker mode="date" value="{{selectedDate}}" bindchange="selectDate">
+        <view class="selected-date">{{scheduleLabel}} <text class="calendar">⌄</text></view>
+      </picker>
+      <text class="nav-button" data-offset="1" bindtap="changeDay">›</text>
+    </view>
+    <text wx:if="{{!isToday}}" class="today-link" bindtap="goToday">回到今天</text>
+
+    <view class="quick-actions">
+      <button class="primary" bindtap="addEvent">＋ 添加事项</button>
+      <button wx:if="{{currentView === 0}}" class="secondary" bindtap="importClipboard">从微信消息导入</button>
+    </view>
+
+    <view class="view-switch">
+      <text class="switch-tab {{cardTabClass}}" data-view="0" bindtap="switchView">卡片视图</text>
+      <text class="switch-tab {{timelineTabClass}}" data-view="1" bindtap="switchView">时间线</text>
+    </view>
+  </view>
+
+  <!-- ===== Swiper 内容区 ===== -->
+  <swiper class="content-swiper" style="height: {{swiperHeight}}px" current="{{currentView}}" bindchange="onSwiperChange" duration="300">
+    <!-- 卡片视图 -->
+    <swiper-item>
+      <scroll-view scroll-y class="swiper-scroll" style="height: {{swiperHeight}}px" enhanced show-scrollbar="{{false}}">
+        <!-- 日程安排 -->
+        <view class="section">
+          <view class="section-header">
+            <view class="section-title">日程安排</view>
+            <view class="section-badge">{{schedulesPending.length + schedulesDone.length}}</view>
           </view>
-        </view>
-      </view>
-    </view>
 
-    <view wx:if="{{schedulesDone.length}}" class="done-group">
-      <view class="done-divider">已完成</view>
-      <view class="event-list">
-        <view wx:for="{{schedulesDone}}" wx:key="id" class="event-card is-done">
-          <view class="time">{{item.timeRange}}</view>
-          <view class="event-body">
-            <view class="event-title">{{item.title}}</view>
-            <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-            <view class="card-actions">
-              <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
-              <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
+          <view wx:if="{{schedulesPending.length}}" class="event-list">
+            <view wx:for="{{schedulesPending}}" wx:key="id" class="event-card">
+              <view class="time">{{item.timeRange}}</view>
+              <view class="event-body">
+                <view class="event-title">{{item.title}}</view>
+                <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
+                <view class="event-meta">{{item.source === 'clipboard' ? '来自微信消息' : '手动添加'}} · 提前 {{item.remindBefore}} 分钟提醒</view>
+                <view class="card-actions">
+                  <text class="action-pill complete" data-id="{{item.id}}" bindtap="complete">✓ 完成</text>
+                  <text class="action-pill postpone" data-id="{{item.id}}" bindtap="postpone">⏳ 延后</text>
+                  <text class="action-sep"></text>
+                  <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+                  <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+                </view>
+              </view>
             </view>
           </view>
-        </view>
-      </view>
-    </view>
 
-    <view wx:if="{{schedulesPending.length === 0 && schedulesDone.length === 0}}" class="empty-small">暂无日程安排</view>
-  </view>
-
-  <!-- 截止任务 -->
-  <view class="section">
-    <view class="section-header">
-      <view class="section-title">截止任务</view>
-      <view class="section-badge">{{deadlinesPending.length + deadlinesDone.length}}</view>
-    </view>
-
-    <view wx:if="{{deadlinesPending.length}}" class="event-list">
-      <view wx:for="{{deadlinesPending}}" wx:key="id" class="event-card">
-        <view class="time deadline-time">{{item.time}}</view>
-        <view class="event-body">
-          <view class="event-title">{{item.title}}</view>
-          <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-          <view class="event-meta">截止 {{item.time}} · 提前 {{item.remindBefore}} 分钟提醒</view>
-          <view class="card-actions">
-            <text class="action" data-id="{{item.id}}" bindtap="complete">完成</text>
-            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
-            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <view wx:if="{{deadlinesDone.length}}" class="done-group">
-      <view class="done-divider">已完成</view>
-      <view class="event-list">
-        <view wx:for="{{deadlinesDone}}" wx:key="id" class="event-card is-done">
-          <view class="time deadline-time">{{item.time}}</view>
-          <view class="event-body">
-            <view class="event-title">{{item.title}}</view>
-            <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-            <view class="card-actions">
-              <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
-              <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
+          <view wx:if="{{schedulesDone.length}}" class="done-group">
+            <view class="done-divider">已完成</view>
+            <view class="event-list">
+              <view wx:for="{{schedulesDone}}" wx:key="id" class="event-card is-done">
+                <view class="time">{{item.timeRange}}</view>
+                <view class="event-body">
+                  <view class="event-title">{{item.title}}</view>
+                  <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
+                  <view class="card-actions">
+                    <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+                    <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+                  </view>
+                </view>
+              </view>
             </view>
           </view>
+
+          <view wx:if="{{schedulesPending.length === 0 && schedulesDone.length === 0}}" class="empty-small">暂无日程安排</view>
         </view>
-      </view>
-    </view>
 
-    <view wx:if="{{deadlinesPending.length === 0 && deadlinesDone.length === 0}}" class="empty-small">暂无截止任务</view>
-  </view>
-
-  <!-- 待办事务 -->
-  <view class="section">
-    <view class="section-header">
-      <view class="section-title">待办事务</view>
-      <view class="section-badge">{{todosPending.length + todosDone.length}}</view>
-    </view>
-
-    <view wx:if="{{todosPending.length}}" class="event-list">
-      <view wx:for="{{todosPending}}" wx:key="id" class="todo-card">
-        <view class="todo-check" data-id="{{item.id}}" bindtap="complete">
-          <text class="check-pending">○</text>
-        </view>
-        <view class="event-body">
-          <view class="event-title">{{item.title}}</view>
-          <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-          <view class="card-actions">
-            <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
-            <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
+        <!-- 截止任务 -->
+        <view class="section">
+          <view class="section-header">
+            <view class="section-title">截止任务</view>
+            <view class="section-badge">{{deadlinesPending.length + deadlinesDone.length}}</view>
           </view>
-        </view>
-      </view>
-    </view>
 
-    <view wx:if="{{todosDone.length}}" class="done-group">
-      <view class="done-divider">已完成</view>
-      <view class="event-list">
-        <view wx:for="{{todosDone}}" wx:key="id" class="todo-card is-done">
-          <view class="todo-check">
-            <text class="check-done">✓</text>
-          </view>
-          <view class="event-body">
-            <view class="event-title">{{item.title}}</view>
-            <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
-            <view class="card-actions">
-              <text class="action edit" data-id="{{item.id}}" bindtap="editItem">编辑</text>
-              <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">删除</text>
+          <view wx:if="{{deadlinesPending.length}}" class="event-list">
+            <view wx:for="{{deadlinesPending}}" wx:key="id" class="event-card">
+              <view class="time deadline-time">{{item.time}}</view>
+              <view class="event-body">
+                <view class="event-title">{{item.title}}</view>
+                <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
+                <view class="event-meta">截止 {{item.time}} · 提前 {{item.remindBefore}} 分钟提醒</view>
+                <view class="card-actions">
+                  <text class="action-pill complete" data-id="{{item.id}}" bindtap="complete">✓ 完成</text>
+                  <text class="action-sep"></text>
+                  <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+                  <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+                </view>
+              </view>
             </view>
           </view>
-        </view>
-      </view>
-    </view>
 
-    <view wx:if="{{todosPending.length === 0 && todosDone.length === 0}}" class="empty-small">暂无待办事务</view>
-  </view>
+          <view wx:if="{{deadlinesDone.length}}" class="done-group">
+            <view class="done-divider">已完成</view>
+            <view class="event-list">
+              <view wx:for="{{deadlinesDone}}" wx:key="id" class="event-card is-done">
+                <view class="time deadline-time">{{item.time}}</view>
+                <view class="event-body">
+                  <view class="event-title">{{item.title}}</view>
+                  <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
+                  <view class="card-actions">
+                    <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+                    <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view wx:if="{{deadlinesPending.length === 0 && deadlinesDone.length === 0}}" class="empty-small">暂无截止任务</view>
+        </view>
+
+        <!-- 待办事务 -->
+        <view class="section">
+          <view class="section-header">
+            <view class="section-title">待办事务</view>
+            <view class="section-badge">{{todosPending.length + todosDone.length}}</view>
+          </view>
+
+          <view wx:if="{{todosPending.length}}" class="event-list">
+            <view wx:for="{{todosPending}}" wx:key="id" class="todo-card">
+              <view class="todo-check" data-id="{{item.id}}" bindtap="complete">
+                <text class="check-pending">○</text>
+              </view>
+              <view class="event-body">
+                <view class="event-title">{{item.title}}</view>
+                <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
+                <view class="card-actions">
+                  <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+                  <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view wx:if="{{todosDone.length}}" class="done-group">
+            <view class="done-divider">已完成</view>
+            <view class="event-list">
+              <view wx:for="{{todosDone}}" wx:key="id" class="todo-card is-done">
+                <view class="todo-check">
+                  <text class="check-done">✓</text>
+                </view>
+                <view class="event-body">
+                  <view class="event-title">{{item.title}}</view>
+                  <view wx:if="{{item.location}}" class="event-location">@ {{item.location}}</view>
+                  <view class="card-actions">
+                    <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+                    <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view wx:if="{{todosPending.length === 0 && todosDone.length === 0}}" class="empty-small">暂无待办事务</view>
+        </view>
+      </scroll-view>
+    </swiper-item>
+
+    <!-- 时间线视图 -->
+    <swiper-item>
+      <scroll-view scroll-y class="swiper-scroll" style="height: {{swiperHeight}}px" enhanced show-scrollbar="{{false}}">
+        <view wx:if="{{hasTimelineItems}}" class="timeline-wrap">
+          <!-- 当前时间红线 -->
+          <view wx:if="{{isToday && nowLineTop >= 0 && pendingTimeline.length}}" class="now-line" style="top: {{nowLineTop}}rpx">
+            <view class="now-dot"></view>
+            <view class="now-label">现在</view>
+          </view>
+
+          <!-- 未完成 -->
+          <block wx:for="{{pendingTimeline}}" wx:key="id">
+            <view class="tl-node">
+              <view class="tl-gutter">
+                <view class="tl-time">{{item.timeLabel}}</view>
+                <view class="tl-dot {{item.type === 'deadline' ? 'dot-deadline' : 'dot-event'}}">
+                  {{item.type === 'deadline' ? '⚑' : ''}}
+                </view>
+                <view class="tl-line"></view>
+              </view>
+              <view class="tl-card">
+                <view class="tl-card-header">
+                  <text class="tl-badge {{item.type === 'deadline' ? 'badge-deadline' : 'badge-event'}}">
+                    {{item.type === 'deadline' ? '截止' : '日程'}}
+                  </text>
+                  <text class="tl-range">{{item.timeRange}}</text>
+                </view>
+                <view class="tl-title">{{item.title}}</view>
+                <view wx:if="{{item.location}}" class="tl-location">@ {{item.location}}</view>
+                <view class="tl-actions">
+                  <text class="action-pill complete" data-id="{{item.id}}" bindtap="complete">✓ 完成</text>
+                  <text class="action-sep"></text>
+                  <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+                  <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+                </view>
+              </view>
+            </view>
+          </block>
+
+          <!-- 已完成 -->
+          <block wx:if="{{doneTimeline.length}}">
+            <view class="done-divider tl-done-divider">已完成</view>
+            <block wx:for="{{doneTimeline}}" wx:key="id">
+              <view class="tl-node is-done">
+                <view class="tl-gutter">
+                  <view class="tl-time">{{item.timeLabel}}</view>
+                  <view class="tl-dot dot-done">✓</view>
+                  <view class="tl-line"></view>
+                </view>
+                <view class="tl-card">
+                  <view class="tl-card-header">
+                    <text class="tl-badge {{item.type === 'deadline' ? 'badge-deadline' : 'badge-event'}}">
+                      {{item.type === 'deadline' ? '截止' : '日程'}}
+                    </text>
+                    <text class="tl-range">{{item.timeRange}}</text>
+                  </view>
+                  <view class="tl-title">{{item.title}}</view>
+                  <view wx:if="{{item.location}}" class="tl-location">@ {{item.location}}</view>
+                  <view class="tl-actions">
+                    <text class="action edit" data-id="{{item.id}}" bindtap="editItem">✎ 编辑</text>
+                    <text class="action delete" data-id="{{item.id}}" bindtap="removeItem">×</text>
+                  </view>
+                </view>
+              </view>
+            </block>
+          </block>
+        </view>
+
+        <view wx:else class="empty">
+          <view class="empty-icon">—</view>
+          <view class="empty-title">这一天暂无安排</view>
+          <view class="empty-copy">点击「添加事项」为这一天安排日程或截止任务吧</view>
+        </view>
+      </scroll-view>
+    </swiper-item>
+  </swiper>
 </view>
