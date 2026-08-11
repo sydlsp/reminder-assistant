@@ -87,7 +87,11 @@ Page({
         }
         const parsed = await aiParse(data)
         this.applyParse(parsed, { source: 'clipboard', originalText: data })
-        wx.showToast({ title: parsed.recognized ? '已智能解析，请确认' : '未识别时间，请手动填写', icon: parsed.recognized ? 'success' : 'none' })
+        if (parsed.source === 'fallback') {
+          wx.showToast({ title: '智能服务不可用，已规则解析', icon: 'none' })
+        } else {
+          wx.showToast({ title: parsed.recognized ? '已智能解析，请确认' : '未识别时间，请手动填写', icon: parsed.recognized ? 'success' : 'none' })
+        }
       },
       fail: () => wx.showToast({ title: '无法读取剪贴板', icon: 'none' }),
       complete: () => this.setData({ loadingClipboard: false, loadingParse: false })
@@ -104,7 +108,9 @@ Page({
     const parsed = await aiParse(text)
     this.setData({ loadingParse: false })
     this.applyParse(parsed, { source: 'manual' })
-    if (parsed.recognized) {
+    if (parsed.source === 'fallback') {
+      wx.showToast({ title: '智能服务不可用，已规则解析', icon: 'none' })
+    } else if (parsed.recognized) {
       wx.showToast({ title: '已智能解析，请确认', icon: 'success' })
     } else {
       wx.showToast({ title: '未识别到时间，已设为待办', icon: 'none' })

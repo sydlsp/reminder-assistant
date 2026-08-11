@@ -8,6 +8,14 @@
 - 完成与延后事项
 - 本地数据存储
 
+## 智能解析配置
+
+智能解析由 `parseEvent` 云函数调用 DeepSeek 完成；小程序端不会保存 API Key。
+
+1. 在微信开发者工具中部署 `cloudfunctions/parseEvent`。
+2. 在该云函数的环境变量中设置 `DEEPSEEK_API_KEY`。
+3. 云函数不可用或请求失败时，应用会自动使用本地规则解析。
+
 ## 运行
 
 在微信开发者工具中导入此目录即可预览。当前 `appid` 是 `touristappid`，开发阶段可替换为自己的小程序 AppID。
