@@ -38,8 +38,20 @@
 .picker { overflow: hidden; padding: 20rpx; background: #f5f7f6; border-radius: 14rpx; color: #263631; font-size: 27rpx; text-overflow: ellipsis; white-space: nowrap; }
 .overdue-reminder-row { align-items: center; justify-content: space-between; margin: -6rpx 0 8rpx; padding-top: 24rpx; border-top: 1rpx solid #edf0ee; }
 .overdue-reminder-row .label { margin-bottom: 6rpx; }
+.completion-state-row { align-items: center; justify-content: space-between; margin: 28rpx 0 0; padding-top: 24rpx; border-top: 1rpx solid #edf0ee; }
+.completion-state-row .label { margin-bottom: 6rpx; }
 .field-hint { color: #9aa49f; font-size: 22rpx; }
 
 /* 保存 */
 .save { margin-top: 8rpx; background: #176b55; border-radius: 20rpx; color: #fff; font-size: 30rpx; line-height: 96rpx; }
 .delete-item { margin-top: 20rpx; background: transparent; color: #c45b54; font-size: 26rpx; line-height: 72rpx; }
+
+/* 提醒确认弹窗：操作按钮为原生 tap，供微信订阅授权直接使用。 */
+.reminder-modal-mask { position: fixed; z-index: 20; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: flex-end; background: rgba(20, 35, 29, .38); }
+.reminder-modal { width: 100%; padding: 40rpx 32rpx calc(34rpx + env(safe-area-inset-bottom)); background: #fff; border-radius: 28rpx 28rpx 0 0; box-sizing: border-box; }
+.reminder-modal-title { color: #142c25; font-size: 34rpx; font-weight: 700; }
+.reminder-modal-copy { margin-top: 14rpx; color: #7c8985; font-size: 25rpx; line-height: 1.55; }
+.reminder-modal-actions { display: flex; gap: 18rpx; margin-top: 34rpx; }
+.reminder-modal-actions button { flex: 1; margin: 0; border-radius: 16rpx; font-size: 27rpx; line-height: 88rpx; }
+.reminder-modal-skip { background: #edf2ef; color: #63726c; }
+.reminder-modal-confirm { background: #176b55; color: #fff; }

@@ -190,7 +190,9 @@ Page({
           timeLabel: timeString(start),
           timelineMeta: formatDuration(start, end),
           sortMin: start.getHours() * 60 + start.getMinutes(),
-          endMin: end.getHours() * 60 + end.getMinutes()
+          endMin: end.getHours() * 60 + end.getMinutes(),
+          startAt: start.getTime(),
+          endAt: end.getTime()
         }
       }
       const dl = new Date(e.deadline)
@@ -207,20 +209,34 @@ Page({
     const pendingTimeline = timelineItems.filter(e => e.status !== 'done')
     const doneTimeline = timelineItems.filter(e => e.status === 'done')
 
+    const pendingSchedules = pendingTimeline.filter(item => item.type === 'event' && item.endAt > item.startAt)
+    pendingSchedules.forEach((item) => {
+      const conflictCount = pendingSchedules.filter((other) =>
+        other.id !== item.id && item.startAt < other.endAt && item.endAt > other.startAt
+      ).length
+      if (conflictCount) {
+        item.hasConflict = true
+        item.conflictLabel = conflictCount > 1 ? `时间冲突 · ${conflictCount} 项` : '时间冲突'
+      }
+    })
+
     let nowLabel = ''
     let nowMarkerAfterList = false
     if (this.data.selectedDate === today) {
       const nowMin = now.getHours() * 60 + now.getMinutes()
       nowLabel = `现在 ${timeString(now)}`
-      const ongoingIndex = pendingTimeline.findIndex(item =>
-        item.type === 'event' && item.sortMin <= nowMin && item.endMin > nowMin
-      )
+      const ongoingIndexes = pendingTimeline.reduce((indexes, item, index) => {
+        if (item.type === 'event' && item.sortMin <= nowMin && item.endMin > nowMin) indexes.push(index)
+        return indexes
+      }, [])
 
-      if (ongoingIndex >= 0) {
-        const current = pendingTimeline[ongoingIndex]
-        current.isOngoing = true
-        current.remainingLabel = formatRemaining(current.endMin - nowMin)
-        current.showNowAfter = true
+      if (ongoingIndexes.length) {
+        ongoingIndexes.forEach((index) => {
+          const current = pendingTimeline[index]
+          current.isOngoing = true
+          current.remainingLabel = formatRemaining(current.endMin - nowMin)
+        })
+        pendingTimeline[ongoingIndexes[ongoingIndexes.length - 1]].showNowAfter = true
       } else {
         const nextIndex = pendingTimeline.findIndex(item => item.sortMin > nowMin)
         if (nextIndex === 0) {

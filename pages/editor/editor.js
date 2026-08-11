@@ -1,4 +1,4 @@
-const { getEvents, upsertEvent, deleteEvent } = require('../../utils/events')
+const { getEvents, upsertEvent, deleteEvent, getScheduleConflicts } = require('../../utils/events')
 const { dateString, timeString, displayDate, localDate } = require('../../utils/date')
 const { aiParse } = require('../../utils/aiParser')
 const { registerReminder, cancelReminders } = require('../../utils/reminder')
@@ -7,6 +7,7 @@ Page({
   data: {
     editId: '',
     isEdit: false,
+    isCompleted: false,
     showPreview: false,
     showEditForm: false,
     type: 'todo',
@@ -30,6 +31,9 @@ Page({
     loadingClipboard: false,
     loadingParse: false,
     saving: false,
+    showReminderSetup: false,
+    savedEventId: '',
+    settingReminder: false,
     // 预览摘要
     previewTypeLabel: '',
     previewDateLabel: '',
@@ -63,6 +67,9 @@ Page({
     this.setData({
       editId: id,
       isEdit: true,
+      isCompleted: event.status === 'done',
+      showReminderSetup: false,
+      savedEventId: '',
       showPreview: false,
       showEditForm: true,
       type: event.type || 'event',
@@ -194,18 +201,19 @@ Page({
   onOverdueReminderChange(event) {
     this.setData({ overdueReminder: event.detail.value })
   },
+  onCompletedChange(event) {
+    this.setData({ isCompleted: event.detail.value })
+  },
 
   async save() {
     if (this.data.saving) return
-    const { editId, type, title, date, time, endTime, remindBefore, overdueReminder, source, originalText, location } = this.data
+    const { editId, type, title, date, time, endTime, remindBefore, overdueReminder, isCompleted, source, originalText, location } = this.data
     if (!title.trim()) {
       wx.showToast({ title: '请填写事项内容', icon: 'none' })
       return
     }
 
     const previous = editId ? getEvents().find(event => event.id === editId) : null
-    this.setData({ saving: true })
-
     const base = {
       id: editId || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       title: title.trim(),
@@ -215,7 +223,7 @@ Page({
       overdueReminder: type === 'deadline' && overdueReminder,
       source,
       originalText,
-      status: previous?.status || 'pending',
+      status: isCompleted ? 'done' : 'pending',
       createdAt: previous?.createdAt || new Date().toISOString()
     }
 
@@ -226,14 +234,28 @@ Page({
       base.deadline = localDate(date, time).toISOString()
     }
 
+    const conflicts = getScheduleConflicts(base)
+    if (conflicts.length) {
+      this.setData({ saving: true })
+      const confirmed = await this.confirmScheduleConflicts(conflicts)
+      if (!confirmed) {
+        this.setData({ saving: false })
+        return
+      }
+    } else {
+      this.setData({ saving: true })
+    }
+
     try {
       // 编辑、完成或删除过的旧版本可能存在多条提醒，先统一取消，避免重复或错时提醒。
       if (previous) await cancelReminders(base.id, previous.reminderId, previous.reminderIds || [])
       upsertEvent(base)
 
-      const reminderIds = await this.requestReminders(base)
-      if (reminderIds.length) {
-        upsertEvent({ ...base, reminderId: reminderIds[0], reminderIds })
+      const reminderPlan = this.getReminderPlan(base)
+      if (base.status !== 'done' && reminderPlan.tmplIds.length) {
+        this.setData({ showReminderSetup: true, savedEventId: base.id })
+        wx.showToast({ title: '已保存，请设置提醒', icon: 'none' })
+        return
       }
 
       wx.showToast({ title: editId ? '已更新事项' : '已加入日程', icon: 'success' })
@@ -243,7 +265,26 @@ Page({
     }
   },
 
-  requestReminders(base) {
+  confirmScheduleConflicts(conflicts) {
+    const summaries = conflicts.slice(0, 2).map((event) => {
+      const start = timeString(new Date(event.startAt))
+      const end = timeString(new Date(event.endAt))
+      return `「${event.title}」 ${start}–${end}`
+    })
+    const more = conflicts.length > 2 ? `\n另有 ${conflicts.length - 2} 项重叠日程` : ''
+
+    return new Promise((resolve) => wx.showModal({
+      title: `发现 ${conflicts.length} 个时间冲突`,
+      content: `与以下日程重叠：\n${summaries.join('\n')}${more}`,
+      cancelText: '返回修改',
+      confirmText: '仍然保存',
+      confirmColor: '#176b55',
+      success: (res) => resolve(res.confirm),
+      fail: () => resolve(false)
+    }))
+  },
+
+  getReminderPlan(base) {
     const { reminderTmplId, overdueTmplId } = getApp().globalData
     const needsAdvance = base.type !== 'todo' && base.remindBefore > 0 && Boolean(reminderTmplId)
     let needsOverdue = base.type === 'deadline' && base.overdueReminder && Boolean(overdueTmplId)
@@ -252,34 +293,72 @@ Page({
       console.warn('[Reminder] 提前提醒与逾期提醒不能共用同一一次性订阅模板，已跳过逾期提醒')
       needsOverdue = false
     }
-    if (base.type === 'deadline' && base.overdueReminder && !overdueTmplId) {
-      console.warn('[Reminder] 未配置 overdueTmplId，跳过逾期提醒')
-      wx.showToast({ title: '请先配置逾期消息模板', icon: 'none' })
+    return {
+      needsAdvance,
+      needsOverdue,
+      tmplIds: [needsAdvance && reminderTmplId, needsOverdue && overdueTmplId].filter(Boolean),
+      reminderTmplId,
+      overdueTmplId
     }
-    if (!needsAdvance && !needsOverdue) {
-      return Promise.resolve([])
-    }
+  },
 
-    const tmplIds = [needsAdvance && reminderTmplId, needsOverdue && overdueTmplId].filter(Boolean)
+  // 此方法必须由 setupReminder 的直接点击同步调用，不能在 await 之后调用。
+  requestReminders(base, plan) {
+    if (!plan.tmplIds.length) return Promise.resolve([])
     return new Promise((resolve) => wx.requestSubscribeMessage({
-      tmplIds,
+      tmplIds: plan.tmplIds,
       success: async (res) => {
         const ids = await Promise.all([
-          needsAdvance && res[reminderTmplId] === 'accept'
-            ? registerReminder(base, reminderTmplId, 'advance') : null,
-          needsOverdue && res[overdueTmplId] === 'accept'
-            ? registerReminder(base, overdueTmplId, 'overdue') : null
+          plan.needsAdvance && res[plan.reminderTmplId] === 'accept'
+            ? registerReminder(base, plan.reminderTmplId, 'advance') : null,
+          plan.needsOverdue && res[plan.overdueTmplId] === 'accept'
+            ? registerReminder(base, plan.overdueTmplId, 'overdue') : null
         ])
-        const reminderIds = ids.filter(Boolean)
-        if (reminderIds.length) wx.showToast({ title: '已设置提醒', icon: 'success' })
-        resolve(reminderIds)
+        resolve(ids.filter(Boolean))
       },
       fail: (err) => {
-        console.log('[Reminder] 用户拒绝或失败:', err.errMsg)
+        console.log('[Reminder] 订阅授权失败:', err.errMsg)
         resolve([])
       }
     }))
   },
+
+  setupReminder() {
+    if (this.data.settingReminder) return
+    const event = getEvents().find(item => item.id === this.data.savedEventId)
+    if (!event || event.status === 'done') {
+      wx.showToast({ title: '事项状态已变化', icon: 'none' })
+      return
+    }
+    const plan = this.getReminderPlan(event)
+    if (!plan.tmplIds.length) {
+      wx.showToast({ title: '没有可用的提醒模板', icon: 'none' })
+      return
+    }
+
+    // requestReminders 在这里立即执行，保持在用户 tap 手势的同步调用链中。
+    const reminderRequest = this.requestReminders(event, plan)
+    this.setData({ settingReminder: true })
+    reminderRequest.then((reminderIds) => {
+      if (!reminderIds.length) {
+        wx.showToast({ title: '未设置提醒，可稍后重试', icon: 'none' })
+        return
+      }
+      upsertEvent({ ...event, reminderId: reminderIds[0], reminderIds })
+      this.setData({ showReminderSetup: false })
+      wx.showToast({ title: '已设置提醒', icon: 'success' })
+      setTimeout(() => wx.navigateBack(), 450)
+    }).catch((err) => {
+      console.warn('[Reminder] 设置提醒异常:', err.message)
+      wx.showToast({ title: '设置提醒失败', icon: 'none' })
+    }).finally(() => this.setData({ settingReminder: false }))
+  },
+
+  skipReminder() {
+    wx.navigateBack()
+  },
+
+  noop() {},
 
   removeItem() {
     wx.showModal({

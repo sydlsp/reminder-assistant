@@ -129,7 +129,10 @@
 .tl-location { color: #8b7355; }
 .tl-duration { color: #8b9692; }
 .tl-sub-separator { color: #c3cfca; }
-.tl-ongoing { flex-shrink: 0; padding: 2rpx 8rpx; border-radius: 7rpx; background: #fff0f0; color: #dd6060; font-size: 19rpx; font-weight: 600; }
+.tl-status-row { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 9rpx; }
+.tl-ongoing, .tl-conflict { display: inline-block; padding: 3rpx 8rpx; border-radius: 7rpx; font-size: 19rpx; font-weight: 600; line-height: 1.3; }
+.tl-ongoing { background: #fff0f0; color: #dd6060; }
+.tl-conflict { background: #fff4e8; color: #c76b2d; }
 .tl-type-hint { flex-shrink: 0; margin: 2rpx 14rpx 0 0; padding: 3rpx 10rpx; border-radius: 8rpx; background: #fdf0e3; color: #c76b2d; font-size: 20rpx; line-height: 1.3; }
 .timeline-complete { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 42rpx; height: 42rpx; margin: 0 28rpx 0 0; border: 2rpx solid #9bc9bb; border-radius: 50%; box-sizing: border-box; }
 .timeline-complete-inner { width: 20rpx; height: 20rpx; border: 2rpx solid #176b55; border-radius: 50%; box-sizing: border-box; }

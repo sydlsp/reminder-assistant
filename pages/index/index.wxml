@@ -194,11 +194,14 @@
                 <view class="tl-main-row">
                   <view class="tl-copy">
                     <view class="tl-title">{{item.title}}</view>
-                    <view wx:if="{{item.location || item.timelineMeta || item.isOngoing}}" class="tl-subline">
+                    <view wx:if="{{item.location || item.timelineMeta}}" class="tl-subline">
                       <text wx:if="{{item.location}}" class="tl-location">@ {{item.location}}</text>
                       <text wx:if="{{item.location && item.timelineMeta}}" class="tl-sub-separator">·</text>
                       <text wx:if="{{item.timelineMeta}}" class="tl-duration">{{item.timelineMeta}}</text>
+                    </view>
+                    <view wx:if="{{item.isOngoing || item.hasConflict}}" class="tl-status-row">
                       <text wx:if="{{item.isOngoing}}" class="tl-ongoing">进行中 · {{item.remainingLabel}}</text>
+                      <text wx:if="{{item.hasConflict}}" class="tl-conflict">{{item.conflictLabel}}</text>
                     </view>
                   </view>
                   <text wx:if="{{item.type === 'deadline'}}" class="tl-type-hint">截止</text>

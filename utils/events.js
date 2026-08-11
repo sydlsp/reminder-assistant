@@ -39,4 +39,25 @@ function deleteEvent(id) {
   saveEvents(events)
 }
 
-module.exports = { getEvents, upsertEvent, updateStatus, shiftEvent, deleteEvent }
+function isSchedule(event) {
+  return event.type === 'event' || (!event.type && event.startAt)
+}
+
+/**
+ * 找出与候选日程重叠的未完成日程。重叠是提示信息，不会阻止保存。
+ */
+function getScheduleConflicts(candidate) {
+  if (!isSchedule(candidate) || !candidate.startAt || !candidate.endAt) return []
+  const candidateStart = new Date(candidate.startAt).getTime()
+  const candidateEnd = new Date(candidate.endAt).getTime()
+  if (!Number.isFinite(candidateStart) || !Number.isFinite(candidateEnd) || candidateEnd <= candidateStart) return []
+
+  return getEvents().filter((event) => {
+    if (event.id === candidate.id || event.status === 'done' || !isSchedule(event)) return false
+    const start = new Date(event.startAt).getTime()
+    const end = new Date(event.endAt).getTime()
+    return Number.isFinite(start) && Number.isFinite(end) && candidateStart < end && candidateEnd > start
+  })
+}
+
+module.exports = { getEvents, upsertEvent, updateStatus, shiftEvent, deleteEvent, getScheduleConflicts }

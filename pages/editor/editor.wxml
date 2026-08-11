@@ -36,6 +36,14 @@
       <view class="picker">{{typeOptions[typeIndex].label}} · {{typeOptions[typeIndex].desc}}</view>
     </picker>
 
+    <view wx:if="{{isEdit}}" class="form-row completion-state-row">
+      <view>
+        <view class="label">完成状态</view>
+        <view class="field-hint">{{isCompleted ? '已完成，关闭可重新打开事项' : '待完成'}}</view>
+      </view>
+      <switch checked="{{isCompleted}}" color="#16735f" bindchange="onCompletedChange" />
+    </view>
+
     <view class="label" style="margin-top: 34rpx;">地点（选填）</view>
     <input class="location-input" placeholder="如：302会议室" value="{{location}}" maxlength="50" bindinput="onLocationInput" />
 
@@ -86,6 +94,19 @@
   </view>
 
   <!-- 确认保存 -->
-  <button wx:if="{{showPreview || showEditForm}}" class="save" bindtap="save" loading="{{saving}}" disabled="{{saving}}">{{saving ? '保存中...' : (isEdit ? '确认更新' : '确认并保存')}}</button>
-  <button wx:if="{{isEdit}}" class="delete-item" bindtap="removeItem">删除此事项</button>
+  <block wx:if="{{!showReminderSetup}}">
+    <button wx:if="{{showPreview || showEditForm}}" class="save" bindtap="save" loading="{{saving}}" disabled="{{saving}}">{{saving ? '保存中...' : (isEdit ? '确认更新' : '确认并保存')}}</button>
+    <button wx:if="{{isEdit}}" class="delete-item" bindtap="removeItem">删除此事项</button>
+  </block>
+
+  <view wx:if="{{showReminderSetup}}" class="reminder-modal-mask">
+    <view class="reminder-modal" catchtap="noop">
+      <view class="reminder-modal-title">事项已保存</view>
+      <view class="reminder-modal-copy">要现在设置提醒吗？你可以稍后重新编辑该事项再设置。</view>
+      <view class="reminder-modal-actions">
+        <button class="reminder-modal-skip" bindtap="skipReminder" disabled="{{settingReminder}}">暂不设置</button>
+        <button class="reminder-modal-confirm" bindtap="setupReminder" loading="{{settingReminder}}" disabled="{{settingReminder}}">设置提醒</button>
+      </view>
+    </view>
+  </view>
 </view>
