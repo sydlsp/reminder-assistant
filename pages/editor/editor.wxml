@@ -78,6 +78,6 @@
   </view>
 
   <!-- 确认保存 -->
-  <button wx:if="{{showPreview || showEditForm}}" class="save" bindtap="save">{{isEdit ? '确认更新' : '确认并保存'}}</button>
+  <button wx:if="{{showPreview || showEditForm}}" class="save" bindtap="save" loading="{{saving}}" disabled="{{saving}}">{{saving ? '保存中...' : (isEdit ? '确认更新' : '确认并保存')}}</button>
   <button wx:if="{{isEdit}}" class="delete-item" bindtap="removeItem">删除此事项</button>
 </view>

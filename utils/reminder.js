@@ -37,22 +37,22 @@ async function registerReminder(eventData, templateId) {
     return null
   }
 
+  const data = {
+    eventId: eventData.id,
+    title: eventData.title,
+    type: eventData.type,
+    eventTime: eventData.type === 'deadline' ? eventData.deadline : eventData.startAt,
+    location: eventData.location || '',
+    remindAt,
+    remindBefore: eventData.remindBefore,
+    templateId,
+    page: '/pages/index/index',
+    status: 'pending',
+    createdAt: new Date()
+  }
+
   try {
-    const { _id } = await db.collection('reminders').add({
-      data: {
-        eventId: eventData.id,
-        title: eventData.title,
-        type: eventData.type,
-        eventTime: eventData.type === 'deadline' ? eventData.deadline : eventData.startAt,
-        location: eventData.location || '',
-        remindAt,
-        remindBefore: eventData.remindBefore,
-        templateId,
-        page: '/pages/index/index',
-        status: 'pending',
-        createdAt: new Date()
-      }
-    })
+    const { _id } = await db.collection('reminders').add({ data })
     console.log('[Reminder] 提醒已注册:', eventData.title, '→', remindAt)
     return _id
   } catch (err) {
@@ -61,22 +61,7 @@ async function registerReminder(eventData, templateId) {
       console.log('[Reminder] reminders 集合不存在，自动创建中...')
       try {
         await wx.cloud.callFunction({ name: 'ensureDB' })
-        // 重试添加
-        const { _id } = await db.collection('reminders').add({
-          data: {
-            eventId: eventData.id,
-            title: eventData.title,
-            type: eventData.type,
-            eventTime: eventData.type === 'deadline' ? eventData.deadline : eventData.startAt,
-            location: eventData.location || '',
-            remindAt,
-            remindBefore: eventData.remindBefore,
-            templateId,
-            page: '/pages/index/index',
-            status: 'pending',
-            createdAt: new Date()
-          }
-        })
+        const { _id } = await db.collection('reminders').add({ data })
         console.log('[Reminder] 提醒已注册:', eventData.title, '→', remindAt)
         return _id
       } catch (retryErr) {
@@ -89,4 +74,37 @@ async function registerReminder(eventData, templateId) {
   }
 }
 
-module.exports = { calcRemindAt, registerReminder }
+/**
+ * 取消事项尚未发送的提醒。eventId 查询会兜底清理旧版本未保存 reminderId 的重复记录。
+ */
+async function cancelReminders(eventId, reminderId = '') {
+  if (!db || !eventId) return false
+
+  const data = { status: 'cancelled', cancelledAt: new Date() }
+  try {
+    const { stats } = await db.collection('reminders')
+      .where({ eventId, status: 'pending' })
+      .update({ data })
+    const updated = stats?.updated || 0
+    console.log('[Reminder] 已取消待发送提醒:', eventId, updated)
+    if (updated > 0 || !reminderId) return updated > 0
+  } catch (err) {
+    console.warn('[Reminder] 按事项取消提醒失败:', err.message)
+    if (!reminderId) return false
+  }
+
+  // 当前版本的 reminderId 是更精确的兜底；仅修改未发送的记录。
+  try {
+    const { stats } = await db.collection('reminders')
+      .where({ _id: reminderId, status: 'pending' })
+      .update({ data })
+    const updated = stats?.updated || 0
+    console.log('[Reminder] 已按 reminderId 取消提醒:', reminderId, updated)
+    return updated > 0
+  } catch (err) {
+    console.warn('[Reminder] 取消提醒失败:', err.message)
+    return false
+  }
+}
+
+module.exports = { calcRemindAt, registerReminder, cancelReminders }

@@ -1,5 +1,6 @@
 const { getEvents, updateStatus, shiftEvent, deleteEvent } = require('../../utils/events')
 const { dateString, timeString, isSameDay, displayDate, localDate } = require('../../utils/date')
+const { cancelReminders } = require('../../utils/reminder')
 
 // 每个时间线节点的预估高度，以及首项前为“现在”标记保留的安全空间（rpx）。
 const TIMELINE_NODE_HEIGHT = 180
@@ -243,8 +244,11 @@ Page({
   },
 
   complete(event) {
-    updateStatus(event.currentTarget.dataset.id, 'done')
+    const id = event.currentTarget.dataset.id
+    const item = getEvents().find(entry => entry.id === id)
+    updateStatus(id, 'done')
     this.loadSchedule()
+    cancelReminders(id, item?.reminderId)
   },
 
   postpone(event) {
@@ -267,8 +271,10 @@ Page({
       confirmColor: '#d45252',
       success: (res) => {
         if (res.confirm) {
+          const item = getEvents().find(entry => entry.id === id)
           deleteEvent(id)
           this.loadSchedule()
+          cancelReminders(id, item?.reminderId)
         }
       }
     })

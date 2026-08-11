@@ -1,7 +1,7 @@
 const { getEvents, upsertEvent, deleteEvent } = require('../../utils/events')
 const { dateString, timeString, displayDate, localDate } = require('../../utils/date')
 const { aiParse } = require('../../utils/aiParser')
-const { registerReminder } = require('../../utils/reminder')
+const { registerReminder, cancelReminders } = require('../../utils/reminder')
 
 Page({
   data: {
@@ -28,6 +28,7 @@ Page({
     location: '',
     loadingClipboard: false,
     loadingParse: false,
+    saving: false,
     // 预览摘要
     previewTypeLabel: '',
     previewDateLabel: '',
@@ -189,12 +190,16 @@ Page({
     })
   },
 
-  save() {
+  async save() {
+    if (this.data.saving) return
     const { editId, type, title, date, time, endTime, remindBefore, source, originalText, location } = this.data
     if (!title.trim()) {
       wx.showToast({ title: '请填写事项内容', icon: 'none' })
       return
     }
+
+    const previous = editId ? getEvents().find(event => event.id === editId) : null
+    this.setData({ saving: true })
 
     const base = {
       id: editId || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -204,8 +209,8 @@ Page({
       remindBefore,
       source,
       originalText,
-      status: 'pending',
-      createdAt: new Date().toISOString()
+      status: previous?.status || 'pending',
+      createdAt: previous?.createdAt || new Date().toISOString()
     }
 
     if (type === 'event') {
@@ -215,43 +220,46 @@ Page({
       base.deadline = localDate(date, time).toISOString()
     }
 
-    upsertEvent(base)
+    try {
+      // 编辑、完成或删除过的旧版本可能存在多条提醒，先统一取消，避免重复或错时提醒。
+      if (previous) await cancelReminders(base.id, previous.reminderId)
+      upsertEvent(base)
 
-    const onComplete = () => {
+      if (type !== 'todo' && remindBefore > 0) {
+        const reminderId = await this.requestReminder(base)
+        if (reminderId) upsertEvent({ ...base, reminderId })
+      }
+
       wx.showToast({ title: editId ? '已更新事项' : '已加入日程', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 450)
-    }
-
-    // 设置了提醒时间 → 请求订阅消息授权
-    if (remindBefore > 0) {
-      this.requestReminder(base, onComplete)
-    } else {
-      onComplete()
+    } finally {
+      this.setData({ saving: false })
     }
   },
 
-  requestReminder(base, callback) {
+  requestReminder(base) {
     const tmplId = getApp().globalData.reminderTmplId
     if (!tmplId) {
       console.warn('[Reminder] 未配置 reminderTmplId，跳过')
-      callback()
-      return
+      return Promise.resolve(null)
     }
 
-    wx.requestSubscribeMessage({
+    return new Promise((resolve) => wx.requestSubscribeMessage({
       tmplIds: [tmplId],
-      success: (res) => {
-        if (res[tmplId] === 'accept') {
-          registerReminder(base, tmplId).then(id => {
-            if (id) wx.showToast({ title: '已设置提醒', icon: 'success' })
-          })
+      success: async (res) => {
+        if (res[tmplId] !== 'accept') {
+          resolve(null)
+          return
         }
+        const reminderId = await registerReminder(base, tmplId)
+        if (reminderId) wx.showToast({ title: '已设置提醒', icon: 'success' })
+        resolve(reminderId)
       },
       fail: (err) => {
         console.log('[Reminder] 用户拒绝或失败:', err.errMsg)
-      },
-      complete: () => callback()
-    })
+        resolve(null)
+      }
+    }))
   },
 
   removeItem() {
@@ -260,9 +268,11 @@ Page({
       content: '删除后无法恢复',
       confirmText: '删除',
       confirmColor: '#d45252',
-      success: (res) => {
+      success: async (res) => {
         if (!res.confirm) return
+        const event = getEvents().find(item => item.id === this.data.editId)
         deleteEvent(this.data.editId)
+        await cancelReminders(this.data.editId, event?.reminderId)
         wx.showToast({ title: '已删除', icon: 'success' })
         setTimeout(() => wx.navigateBack(), 350)
       }

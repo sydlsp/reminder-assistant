@@ -1,5 +1,6 @@
 const { getEvents, updateStatus, deleteEvent } = require('../../utils/events')
 const { dateString, timeString, isSameDay, displayDate, localDate } = require('../../utils/date')
+const { cancelReminders } = require('../../utils/reminder')
 
 Page({
   data: {
@@ -105,8 +106,11 @@ Page({
   },
 
   complete(e) {
-    updateStatus(e.currentTarget.dataset.id, 'done')
+    const id = e.currentTarget.dataset.id
+    const item = getEvents().find(entry => entry.id === id)
+    updateStatus(id, 'done')
     this.loadTimeline()
+    cancelReminders(id, item?.reminderId)
   },
 
   editItem(e) {
@@ -121,8 +125,10 @@ Page({
       confirmColor: '#d45252',
       success: (res) => {
         if (res.confirm) {
+          const item = getEvents().find(entry => entry.id === id)
           deleteEvent(id)
           this.loadTimeline()
+          cancelReminders(id, item?.reminderId)
         }
       }
     })
