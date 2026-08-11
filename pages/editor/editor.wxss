@@ -39,3 +39,4 @@
 
 /* 保存 */
 .save { margin-top: 8rpx; background: #176b55; border-radius: 20rpx; color: #fff; font-size: 30rpx; line-height: 96rpx; }
+.delete-item { margin-top: 20rpx; background: transparent; color: #c45b54; font-size: 26rpx; line-height: 72rpx; }

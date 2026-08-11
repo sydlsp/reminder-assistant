@@ -96,16 +96,24 @@
 .dot-done { background: #b6c6c0; color: #fff; font-size: 13rpx; font-weight: 700; }
 .tl-line { position: absolute; top: 48rpx; bottom: -16rpx; left: 50%; width: 2rpx; background: #dce3e0; }
 
-.tl-card { flex: 1; min-width: 0; margin-left: 20rpx; margin-bottom: 16rpx; padding: 22rpx 24rpx; background: #fff; border-radius: 16rpx; box-shadow: 0 4rpx 20rpx rgba(23, 64, 52, .05); }
-.tl-card-header { display: flex; align-items: center; gap: 14rpx; margin-bottom: 10rpx; }
-.tl-badge { padding: 2rpx 14rpx; border-radius: 8rpx; font-size: 20rpx; font-weight: 600; }
-.badge-event { background: #e0f0ea; color: #176b55; }
-.badge-deadline { background: #fdf0e3; color: #c76b2d; }
-.tl-range { color: #84918d; font-size: 22rpx; }
-.tl-title { color: #142c25; font-size: 28rpx; font-weight: 600; line-height: 1.4; word-break: break-all; }
-.tl-location { margin-top: 8rpx; color: #8b7355; font-size: 22rpx; }
-.tl-actions { display: flex; align-items: center; gap: 8rpx; margin-top: 18rpx; }
+.tl-item { flex: 1; min-width: 0; margin: 0 24rpx 14rpx 20rpx; padding: 8rpx 0 18rpx; border-bottom: 1rpx solid #e3ebe7; }
+.tl-main-row { display: flex; align-items: flex-start; min-height: 52rpx; }
+.tl-copy { flex: 1; min-width: 0; padding: 2rpx 12rpx 0 0; }
+.tl-title { overflow: hidden; color: #142c25; font-size: 28rpx; font-weight: 600; line-height: 1.38; text-overflow: ellipsis; white-space: nowrap; }
+.tl-subline { display: flex; align-items: center; gap: 8rpx; margin-top: 8rpx; overflow: hidden; color: #8b9692; font-size: 22rpx; line-height: 1.2; white-space: nowrap; }
+.tl-location, .tl-duration { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-location { color: #8b7355; }
+.tl-duration { color: #8b9692; }
+.tl-sub-separator { color: #c3cfca; }
+.tl-type-hint { flex-shrink: 0; margin: 2rpx 14rpx 0 0; padding: 3rpx 10rpx; border-radius: 8rpx; background: #fdf0e3; color: #c76b2d; font-size: 20rpx; line-height: 1.3; }
+.timeline-complete { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 42rpx; height: 42rpx; margin: 0 28rpx 0 0; border: 2rpx solid #9bc9bb; border-radius: 50%; box-sizing: border-box; }
+.timeline-complete-inner { width: 20rpx; height: 20rpx; border: 2rpx solid #176b55; border-radius: 50%; box-sizing: border-box; }
 .tl-done-divider { margin: 20rpx 0 16rpx; padding: 12rpx 0 12rpx 110rpx; }
+.tl-node-compact .tl-gutter { padding-top: 12rpx; }
+.tl-node-compact .tl-line { bottom: -8rpx; }
+.tl-item-done { margin-bottom: 8rpx; padding-bottom: 12rpx; }
+.tl-item-done .tl-title { color: #66756f; font-size: 25rpx; font-weight: 500; text-decoration: line-through; }
+.tl-location-done { display: block; margin-top: 5rpx; color: #98a49f; font-size: 20rpx; }
 
 /* 空状态 */
 .empty { margin-top: 28rpx; padding: 74rpx 34rpx; background: #fff; border-radius: 24rpx; text-align: center; }

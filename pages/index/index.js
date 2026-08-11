@@ -5,6 +5,15 @@ const { dateString, timeString, isSameDay, displayTime, displayTimeRange, displa
 const TIMELINE_NODE_HEIGHT = 180
 const NOW_LINE_TOP_INSET = 34
 
+function formatDuration(start, end) {
+  const minutes = Math.round((end.getTime() - start.getTime()) / 60000)
+  if (minutes <= 0) return ''
+  if (minutes < 60) return `${minutes} 分钟`
+  const hours = Math.floor(minutes / 60)
+  const restMinutes = minutes % 60
+  return restMinutes ? `${hours} 小时 ${restMinutes} 分钟` : `${hours} 小时`
+}
+
 Page({
   data: {
     currentView: 0,  // 0=卡片视图, 1=时间线
@@ -114,7 +123,7 @@ Page({
           id: e.id, type: 'event', title: e.title,
           location: e.location || '', status: e.status,
           timeLabel: timeString(start),
-          timeRange: `${timeString(start)} - ${timeString(end)}`,
+          timelineMeta: formatDuration(start, end),
           sortMin: start.getHours() * 60 + start.getMinutes()
         }
       }
@@ -123,7 +132,7 @@ Page({
         id: e.id, type: 'deadline', title: e.title,
         location: e.location || '', status: e.status,
         timeLabel: timeString(dl),
-        timeRange: `截止 ${timeString(dl)}`,
+        timelineMeta: '',
         sortMin: dl.getHours() * 60 + dl.getMinutes()
       }
     }).sort((a, b) => a.sortMin - b.sortMin)

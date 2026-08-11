@@ -1,4 +1,4 @@
-const { getEvents, upsertEvent } = require('../../utils/events')
+const { getEvents, upsertEvent, deleteEvent } = require('../../utils/events')
 const { dateString, timeString, displayDate, localDate } = require('../../utils/date')
 const { aiParse } = require('../../utils/aiParser')
 const { registerReminder } = require('../../utils/reminder')
@@ -246,6 +246,21 @@ Page({
         console.log('[Reminder] 用户拒绝或失败:', err.errMsg)
       },
       complete: () => callback()
+    })
+  },
+
+  removeItem() {
+    wx.showModal({
+      title: '确认删除',
+      content: '删除后无法恢复',
+      confirmText: '删除',
+      confirmColor: '#d45252',
+      success: (res) => {
+        if (!res.confirm) return
+        deleteEvent(this.data.editId)
+        wx.showToast({ title: '已删除', icon: 'success' })
+        setTimeout(() => wx.navigateBack(), 350)
+      }
     })
   }
 })
