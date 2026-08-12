@@ -288,11 +288,30 @@
           <view class="calendar-legend-item"><view class="calendar-dot dot-deadline"></view><text>截止任务</text></view>
         </view>
 
+        <view class="calendar-summary">
+          <view class="calendar-summary-header">
+            <view>
+              <view class="calendar-summary-title">{{calendarSelectedLabel}}</view>
+              <view class="calendar-summary-count">{{calendarSummaryCount ? '共 ' + calendarSummaryCount + ' 项安排' : '当天暂无安排'}}</view>
+            </view>
+            <text class="calendar-summary-link" bindtap="viewSelectedDay">查看日程 ›</text>
+          </view>
+          <view wx:if="{{calendarSummaryItems.length}}" class="calendar-summary-list">
+            <view wx:for="{{calendarSummaryItems}}" wx:key="id" class="calendar-summary-item {{item.isDone ? 'is-done' : ''}}" data-id="{{item.id}}" bindtap="editItem">
+              <text class="calendar-summary-time">{{item.time}}</text>
+              <text class="calendar-summary-type {{item.typeClass}}">{{item.typeLabel}}</text>
+              <text class="calendar-summary-name">{{item.title}}</text>
+            </view>
+            <view wx:if="{{calendarSummaryHasMore}}" class="calendar-summary-more">还有更多事项，请前往日程查看</view>
+          </view>
+          <view wx:else class="calendar-summary-empty">没有日程或截止任务，点击上方「添加事项」开始安排。</view>
+        </view>
+
         <view class="calendar-todo-card">
           <view class="calendar-todo-icon">✓</view>
           <view><view class="calendar-todo-title">未安排日期的待办</view><view class="calendar-todo-copy">还有 {{calendarTodoCount}} 项待办等待完成</view></view>
         </view>
-        <view class="calendar-tip">点击日期选中；切换到底部「日程」查看详细安排</view>
+        <view class="calendar-tip">点击日期即可查看当天摘要</view>
       </scroll-view>
     </swiper-item>
   </swiper>

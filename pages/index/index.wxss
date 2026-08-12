@@ -210,6 +210,23 @@
 .calendar-count { position: absolute; top: -3rpx; right: 10rpx; min-width: 22rpx; height: 22rpx; padding: 0 3rpx; border-radius: 12rpx; background: #e8f2ee; color: #176b55; font-size: 16rpx; line-height: 22rpx; text-align: center; }
 .calendar-legend { display: flex; justify-content: center; gap: 28rpx; margin: 24rpx 0 30rpx; color: #788680; font-size: 22rpx; }
 .calendar-legend-item { display: flex; align-items: center; gap: 8rpx; }
+.calendar-summary { overflow: hidden; margin-bottom: 24rpx; border: 1rpx solid #e2ece7; border-radius: 20rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(23, 64, 52, .035); }
+.calendar-summary-header { display: flex; align-items: center; justify-content: space-between; padding: 22rpx 24rpx 18rpx; border-bottom: 1rpx solid #edf2ef; }
+.calendar-summary-title { color: #263b34; font-size: 27rpx; font-weight: 700; }
+.calendar-summary-count { margin-top: 5rpx; color: #81908a; font-size: 21rpx; }
+.calendar-summary-link { flex-shrink: 0; margin-left: 16rpx; color: #176b55; font-size: 22rpx; font-weight: 600; }
+.calendar-summary-list { padding: 4rpx 24rpx 12rpx; }
+.calendar-summary-item { display: flex; align-items: center; min-height: 64rpx; border-bottom: 1rpx solid #f0f4f2; }
+.calendar-summary-item:last-child { border-bottom: 0; }
+.calendar-summary-time { width: 76rpx; flex-shrink: 0; color: #496b5f; font-size: 22rpx; font-weight: 600; }
+.calendar-summary-type { flex-shrink: 0; padding: 3rpx 9rpx; border-radius: 7rpx; font-size: 18rpx; line-height: 1.25; }
+.calendar-summary-type.is-event { background: #e4f2ec; color: #23755b; }
+.calendar-summary-type.is-deadline { background: #fdf0e3; color: #c76b2d; }
+.calendar-summary-name { flex: 1; min-width: 0; margin-left: 14rpx; overflow: hidden; color: #34433e; font-size: 24rpx; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-summary-item.is-done { opacity: .48; }
+.calendar-summary-item.is-done .calendar-summary-name { text-decoration: line-through; }
+.calendar-summary-more { padding: 14rpx 0 5rpx; color: #85938d; font-size: 21rpx; text-align: center; }
+.calendar-summary-empty { padding: 30rpx 24rpx; color: #82908b; font-size: 23rpx; line-height: 1.6; }
 .calendar-todo-card { display: flex; align-items: center; gap: 18rpx; padding: 24rpx; background: #edf4f0; border-radius: 18rpx; }
 .calendar-todo-icon { display: flex; width: 48rpx; height: 48rpx; align-items: center; justify-content: center; border-radius: 50%; background: #d2e7de; color: #176b55; font-size: 25rpx; font-weight: 700; }
 .calendar-todo-title { color: #30413b; font-size: 26rpx; font-weight: 600; }

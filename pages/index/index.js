@@ -92,7 +92,11 @@ Page({
     calendarTitle: '',
     calendarWeekdays: ['一', '二', '三', '四', '五', '六', '日'],
     calendarWeeks: [],
-    calendarTodoCount: 0
+    calendarTodoCount: 0,
+    calendarSelectedLabel: '',
+    calendarSummaryItems: [],
+    calendarSummaryCount: 0,
+    calendarSummaryHasMore: false
   },
 
   async onLoad(options) {
@@ -238,6 +242,23 @@ Page({
     const [schedulesPending, schedulesDone] = split(schedules)
     const [deadlinesPending, deadlinesDone] = split(deadlines)
 
+    const calendarSummaryAll = cardEvents
+      .filter((event) => event.type === 'event' || event.type === 'deadline')
+      .map((event) => {
+        const when = new Date(event.type === 'deadline' ? event.deadline : event.startAt)
+        return {
+          id: event.id,
+          title: event.title,
+          time: timeString(when),
+          typeLabel: event.type === 'deadline' ? '截止' : '日程',
+          typeClass: event.type === 'deadline' ? 'is-deadline' : 'is-event',
+          isDone: event.status === 'done',
+          sortAt: when.getTime()
+        }
+      })
+      .sort((first, second) => first.sortAt - second.sortAt)
+    const calendarSummaryItems = calendarSummaryAll.slice(0, 3)
+
     // ===== 时间线视图数据 =====
     const timelineEvents = allEvents.filter(e => {
       if (e.type === 'todo') return false
@@ -330,7 +351,11 @@ Page({
       calendarMonth,
       calendarTitle: `${calendarYear} 年 ${calendarMonthNumber} 月`,
       calendarWeeks,
-      calendarTodoCount
+      calendarTodoCount,
+      calendarSelectedLabel: displayDate(selectedDateObj),
+      calendarSummaryItems,
+      calendarSummaryCount: calendarSummaryAll.length,
+      calendarSummaryHasMore: calendarSummaryAll.length > calendarSummaryItems.length
     })
   },
 
@@ -396,6 +421,15 @@ Page({
       selectedDate,
       calendarMonth: selectedDate.slice(0, 7)
     }, () => this.loadSchedule())
+  },
+
+  viewSelectedDay() {
+    this.setData({
+      currentView: 0,
+      cardTabClass: 'active',
+      timelineTabClass: '',
+      calendarTabClass: ''
+    }, () => this.measureHeader())
   },
 
   async complete(event) {
