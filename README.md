@@ -15,7 +15,8 @@
 
 ## 数据与提醒机制
 
-- 事项主体保存在小程序本地存储；换设备、清除小程序数据后不会自动恢复。
+- 事项主体保存在云数据库 `events` 集合。云函数从微信登录上下文取得 OpenID，写入受控的 `ownerOpenId` 字段，并在所有读取、写入、更新和删除操作中强制按该 OpenID 过滤；不同账号的数据彼此隔离。
+- 首次升级后会将 `reminder_events_v1` 中的本地历史事项一次性迁移到当前账号的云端；本地缓存仅作为加载缓存，不再是唯一数据源。
 - 提醒任务保存在云数据库 `reminders` 集合，由 `remindWorker` 每分钟扫描和发送。
 - 编辑、完成或删除事项时，会取消该事项所有尚未发送的提醒，避免旧提醒继续触发。
 - 保存事项后会显示“设置提醒”弹窗。必须点击弹窗中的按钮才会请求微信订阅授权，这是微信对订阅消息的直接点击限制。
@@ -41,11 +42,14 @@
 
 在微信开发者工具中，分别右键以下目录，选择“上传并部署：云端安装依赖”：
 
-- `cloudfunctions/ensureDB`：首次使用时创建 `reminders` 集合的兜底函数。
+- `cloudfunctions/ensureDB`：首次使用时创建 `events`、`reminders` 集合的兜底函数。
+- `cloudfunctions/events`：事项云端读写与本地历史数据迁移，负责按 OpenID 隔离。
 - `cloudfunctions/parseEvent`：调用 DeepSeek 解析自然语言。
 - `cloudfunctions/remindWorker`：扫描并发送到期提醒。
 
 `remindWorker/config.json` 已配置定时触发器 `remindTimer`：`0 * * * * * *`，即每分钟运行一次；部署后可在云开发控制台查看函数日志确认触发。
+
+部署时请在云开发控制台将 `events` 集合权限设为“仅管理员可读写”，禁止客户端直接访问。应用不会直接读取 `events` 集合，所有事项操作都经由 `cloudfunctions/events`；该函数还会再次按调用者 OpenID 校验，因此不会信任客户端传入的用户身份。
 
 ## 智能解析配置
 
@@ -76,9 +80,10 @@ DeepSeek API Key 只保存在云函数环境变量中，不会被打包到小程
 pages/index/              首页、卡片视图和时间线视图
 pages/editor/             创建、编辑、冲突提示与提醒授权弹窗
 utils/date.js             日期工具和本地规则解析
-utils/events.js           本地事项存储与时间冲突检测
+utils/events.js           事项云端同步、本地迁移缓存与时间冲突检测
 utils/aiParser.js         云端 AI 解析与本地降级
 utils/reminder.js         提醒创建、取消与提醒时间计算
+cloudfunctions/events     事项云端读写、OpenID 隔离与历史迁移
 cloudfunctions/parseEvent DeepSeek 解析云函数
 cloudfunctions/remindWorker 定时发送订阅消息
 cloudfunctions/ensureDB  云数据库集合初始化
@@ -86,7 +91,7 @@ cloudfunctions/ensureDB  云数据库集合初始化
 
 ## 已知限制与后续方向
 
-- 事项数据尚未同步到云数据库，也没有登录和多设备同步。
+- 事项数据依赖已部署的 `events` 云函数和云数据库；未部署时应用会提示云端加载失败。
 - 定时任务存在极小的并发重复发送窗口，后续可为发送记录增加云端抢占锁。
 - 暂未支持重复日程、月历视图、搜索筛选和数据导出。
 

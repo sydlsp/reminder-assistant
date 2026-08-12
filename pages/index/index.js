@@ -1,4 +1,4 @@
-const { getEvents, updateStatus, shiftEvent, deleteEvent } = require('../../utils/events')
+const { getEvents, initializeEvents, refreshEvents, updateStatus, shiftEvent, deleteEvent } = require('../../utils/events')
 const { dateString, timeString, isSameDay, displayDate, localDate } = require('../../utils/date')
 const { cancelReminders } = require('../../utils/reminder')
 
@@ -45,16 +45,13 @@ Page({
     nowMarkerAfterList: false
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     const sys = wx.getSystemInfoSync()
     this.setData({ pageHeight: sys.windowHeight }, () => {
-      if (options.date) {
-        this.setData({ selectedDate: options.date }, () => this.loadSchedule())
-      } else {
-        this.setData({ selectedDate: dateString() }, () => this.loadSchedule())
-      }
+      this.setData({ selectedDate: options.date || dateString() })
       setTimeout(() => this.measureHeader(), 100)
     })
+    await this.loadCloudEvents()
   },
 
   measureHeader() {
@@ -70,9 +67,20 @@ Page({
     })
   },
 
-  onShow() {
-    this.loadSchedule()
+  async onShow() {
+    await this.loadCloudEvents()
     this.startNowTicker()
+  },
+
+  async loadCloudEvents() {
+    try {
+      await initializeEvents()
+      await refreshEvents()
+    } catch (err) {
+      console.warn('[Events] 云端事项加载失败:', err.message)
+      wx.showToast({ title: '云端数据加载失败，请检查网络', icon: 'none' })
+    }
+    this.loadSchedule()
   },
 
   onHide() {
@@ -306,19 +314,27 @@ Page({
     this.setData({ selectedDate: dateString() }, () => this.loadSchedule())
   },
 
-  complete(event) {
+  async complete(event) {
     const id = event.currentTarget.dataset.id
     const item = getEvents().find(entry => entry.id === id)
-    updateStatus(id, 'done')
-    this.loadSchedule()
-    cancelReminders(id, item?.reminderId, item?.reminderIds || [])
+    try {
+      await updateStatus(id, 'done')
+      this.loadSchedule()
+      await cancelReminders(id, item?.reminderId, item?.reminderIds || [])
+    } catch (err) {
+      wx.showToast({ title: '操作失败，请重试', icon: 'none' })
+    }
   },
 
-  postpone(event) {
+  async postpone(event) {
     const id = event.currentTarget.dataset.id
-    shiftEvent(id, 60)
-    wx.showToast({ title: '已延后 1 小时', icon: 'success' })
-    this.loadSchedule()
+    try {
+      await shiftEvent(id, 60)
+      wx.showToast({ title: '已延后 1 小时', icon: 'success' })
+      this.loadSchedule()
+    } catch (err) {
+      wx.showToast({ title: '延后失败，请重试', icon: 'none' })
+    }
   },
 
   editItem(event) {
@@ -332,12 +348,16 @@ Page({
       title: '确认删除',
       content: '删除后无法恢复',
       confirmColor: '#d45252',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
           const item = getEvents().find(entry => entry.id === id)
-          deleteEvent(id)
-          this.loadSchedule()
-          cancelReminders(id, item?.reminderId, item?.reminderIds || [])
+          try {
+            await deleteEvent(id)
+            this.loadSchedule()
+            await cancelReminders(id, item?.reminderId, item?.reminderIds || [])
+          } catch (err) {
+            wx.showToast({ title: '删除失败，请重试', icon: 'none' })
+          }
         }
       }
     })

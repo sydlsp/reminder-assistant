@@ -1,4 +1,4 @@
-const { getEvents, updateStatus, deleteEvent } = require('../../utils/events')
+const { getEvents, initializeEvents, refreshEvents, updateStatus, deleteEvent } = require('../../utils/events')
 const { dateString, timeString, isSameDay, displayDate, localDate } = require('../../utils/date')
 const { cancelReminders } = require('../../utils/reminder')
 
@@ -13,15 +13,26 @@ Page({
     nowLineTop: -1
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     if (options.date) {
-      this.setData({ selectedDate: options.date }, () => this.loadTimeline())
+      this.setData({ selectedDate: options.date })
     } else {
-      this.setData({ selectedDate: dateString() }, () => this.loadTimeline())
+      this.setData({ selectedDate: dateString() })
     }
+    await this.loadCloudEvents()
   },
 
-  onShow() {
+  async onShow() {
+    await this.loadCloudEvents()
+  },
+
+  async loadCloudEvents() {
+    try {
+      await initializeEvents()
+      await refreshEvents()
+    } catch (err) {
+      console.warn('[Events] 云端事项加载失败:', err.message)
+    }
     this.loadTimeline()
   },
 
@@ -105,12 +116,16 @@ Page({
     wx.navigateTo({ url: `/pages/editor/editor?date=${this.data.selectedDate}` })
   },
 
-  complete(e) {
+  async complete(e) {
     const id = e.currentTarget.dataset.id
     const item = getEvents().find(entry => entry.id === id)
-    updateStatus(id, 'done')
-    this.loadTimeline()
-    cancelReminders(id, item?.reminderId, item?.reminderIds || [])
+    try {
+      await updateStatus(id, 'done')
+      this.loadTimeline()
+      await cancelReminders(id, item?.reminderId, item?.reminderIds || [])
+    } catch (err) {
+      wx.showToast({ title: '操作失败，请重试', icon: 'none' })
+    }
   },
 
   editItem(e) {
@@ -123,12 +138,16 @@ Page({
       title: '确认删除',
       content: '删除后无法恢复',
       confirmColor: '#d45252',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
           const item = getEvents().find(entry => entry.id === id)
-          deleteEvent(id)
-          this.loadTimeline()
-          cancelReminders(id, item?.reminderId, item?.reminderIds || [])
+          try {
+            await deleteEvent(id)
+            this.loadTimeline()
+            await cancelReminders(id, item?.reminderId, item?.reminderIds || [])
+          } catch (err) {
+            wx.showToast({ title: '删除失败，请重试', icon: 'none' })
+          }
         }
       }
     })

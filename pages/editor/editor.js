@@ -1,4 +1,4 @@
-const { getEvents, upsertEvent, deleteEvent, getScheduleConflicts } = require('../../utils/events')
+const { getEvents, initializeEvents, upsertEvent, deleteEvent, getScheduleConflicts } = require('../../utils/events')
 const { dateString, timeString, displayDate, localDate } = require('../../utils/date')
 const { aiParse } = require('../../utils/aiParser')
 const { registerReminder, cancelReminders } = require('../../utils/reminder')
@@ -40,8 +40,15 @@ Page({
     previewTimeLabel: ''
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     if (options.date) this.setData({ date: options.date })
+    try {
+      await initializeEvents()
+    } catch (err) {
+      console.warn('[Events] 云端事项初始化失败:', err.message)
+      wx.showToast({ title: '云端数据加载失败，请返回重试', icon: 'none' })
+      return
+    }
     if (options.id) {
       this.loadEvent(options.id)
     } else if (options.importClipboard === '1') {
@@ -249,7 +256,7 @@ Page({
     try {
       // 编辑、完成或删除过的旧版本可能存在多条提醒，先统一取消，避免重复或错时提醒。
       if (previous) await cancelReminders(base.id, previous.reminderId, previous.reminderIds || [])
-      upsertEvent(base)
+      await upsertEvent(base)
 
       const reminderPlan = this.getReminderPlan(base)
       if (base.status !== 'done' && reminderPlan.tmplIds.length) {
@@ -339,12 +346,12 @@ Page({
     // requestReminders 在这里立即执行，保持在用户 tap 手势的同步调用链中。
     const reminderRequest = this.requestReminders(event, plan)
     this.setData({ settingReminder: true })
-    reminderRequest.then((reminderIds) => {
+    reminderRequest.then(async (reminderIds) => {
       if (!reminderIds.length) {
         wx.showToast({ title: '未设置提醒，可稍后重试', icon: 'none' })
         return
       }
-      upsertEvent({ ...event, reminderId: reminderIds[0], reminderIds })
+      await upsertEvent({ ...event, reminderId: reminderIds[0], reminderIds })
       this.setData({ showReminderSetup: false })
       wx.showToast({ title: '已设置提醒', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 450)
@@ -369,7 +376,7 @@ Page({
       success: async (res) => {
         if (!res.confirm) return
         const event = getEvents().find(item => item.id === this.data.editId)
-        deleteEvent(this.data.editId)
+        await deleteEvent(this.data.editId)
         await cancelReminders(this.data.editId, event?.reminderId, event?.reminderIds || [])
         wx.showToast({ title: '已删除', icon: 'success' })
         setTimeout(() => wx.navigateBack(), 350)
