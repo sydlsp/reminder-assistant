@@ -19,11 +19,54 @@ function formatRemaining(minutes) {
   return restMinutes ? `还剩 ${hours} 小时 ${restMinutes} 分钟` : `还剩 ${hours} 小时`
 }
 
+function monthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function buildCalendarWeeks(month, selectedDate, events) {
+  const [year, monthNumber] = month.split('-').map(Number)
+  const first = new Date(year, monthNumber - 1, 1)
+  const gridStart = new Date(first)
+  // 周一为一周起点，方便工作日安排的浏览。
+  gridStart.setDate(1 - ((first.getDay() + 6) % 7))
+  const counts = {}
+  events.forEach((event) => {
+    const date = event.type === 'deadline' ? event.deadline : event.startAt
+    if (!date || event.type === 'todo') return
+    const key = dateString(new Date(date))
+    if (!counts[key]) counts[key] = { schedules: 0, deadlines: 0 }
+    if (event.type === 'deadline') counts[key].deadlines += 1
+    else counts[key].schedules += 1
+  })
+
+  const today = dateString()
+  return Array.from({ length: 6 }, (_, week) => ({
+    key: `week-${week}`,
+    days: Array.from({ length: 7 }, (_, weekday) => {
+      const date = new Date(gridStart)
+      date.setDate(gridStart.getDate() + week * 7 + weekday)
+      const key = dateString(date)
+      const count = counts[key] || { schedules: 0, deadlines: 0 }
+      return {
+        key,
+        day: date.getDate(),
+        isCurrentMonth: date.getMonth() === monthNumber - 1,
+        isToday: key === today,
+        isSelected: key === selectedDate,
+        hasSchedules: count.schedules > 0,
+        hasDeadlines: count.deadlines > 0,
+        itemCount: count.schedules + count.deadlines
+      }
+    })
+  }))
+}
+
 Page({
   data: {
-    currentView: 0,  // 0=卡片视图, 1=时间线
+    currentView: 0,  // 0=卡片视图, 1=时间线, 2=月历
     cardTabClass: 'active',
     timelineTabClass: '',
+    calendarTabClass: '',
     scheduleLabel: '',
     selectedDate: '',
     isToday: true,
@@ -42,13 +85,21 @@ Page({
     doneTimeline: [],
     hasTimelineItems: false,
     nowLabel: '',
-    nowMarkerAfterList: false
+    nowMarkerAfterList: false,
+
+    // 月历视图
+    calendarMonth: '',
+    calendarTitle: '',
+    calendarWeekdays: ['一', '二', '三', '四', '五', '六', '日'],
+    calendarWeeks: [],
+    calendarTodoCount: 0
   },
 
   async onLoad(options) {
     const sys = wx.getSystemInfoSync()
     this.setData({ pageHeight: sys.windowHeight }, () => {
-      this.setData({ selectedDate: options.date || dateString() })
+      const selectedDate = options.date || dateString()
+      this.setData({ selectedDate, calendarMonth: selectedDate.slice(0, 7) })
       setTimeout(() => this.measureHeader(), 100)
     })
     await this.loadCloudEvents()
@@ -112,6 +163,10 @@ Page({
     const selectedDateObj = new Date(`${this.data.selectedDate}T00:00:00`)
 
     const allEvents = getEvents()
+    const calendarMonth = this.data.calendarMonth || this.data.selectedDate.slice(0, 7)
+    const [calendarYear, calendarMonthNumber] = calendarMonth.split('-').map(Number)
+    const calendarWeeks = buildCalendarWeeks(calendarMonth, this.data.selectedDate, allEvents)
+    const calendarTodoCount = allEvents.filter((event) => event.type === 'todo' && event.status !== 'done').length
 
     // ===== 卡片视图数据 =====
     const cardEvents = allEvents.filter((event) => {
@@ -268,7 +323,11 @@ Page({
       pendingTimeline, doneTimeline,
       hasTimelineItems: timelineItems.length > 0,
       nowLabel,
-      nowMarkerAfterList
+      nowMarkerAfterList,
+      calendarMonth,
+      calendarTitle: `${calendarYear} 年 ${calendarMonthNumber} 月`,
+      calendarWeeks,
+      calendarTodoCount
     })
   },
 
@@ -277,8 +336,9 @@ Page({
     this.setData({
       currentView: view,
       cardTabClass: view === 0 ? 'active' : '',
-      timelineTabClass: view === 1 ? 'active' : ''
-    })
+      timelineTabClass: view === 1 ? 'active' : '',
+      calendarTabClass: view === 2 ? 'active' : ''
+    }, () => this.measureHeader())
   },
 
   switchView(e) {
@@ -287,8 +347,9 @@ Page({
       this.setData({
         currentView: view,
         cardTabClass: view === 0 ? 'active' : '',
-        timelineTabClass: view === 1 ? 'active' : ''
-      })
+        timelineTabClass: view === 1 ? 'active' : '',
+        calendarTabClass: view === 2 ? 'active' : ''
+      }, () => this.measureHeader())
     }
   },
 
@@ -301,7 +362,8 @@ Page({
   },
 
   selectDate(event) {
-    this.setData({ selectedDate: event.detail.value }, () => this.loadSchedule())
+    const selectedDate = event.detail.value
+    this.setData({ selectedDate, calendarMonth: selectedDate.slice(0, 7) }, () => this.loadSchedule())
   },
 
   changeDay(event) {
@@ -311,7 +373,33 @@ Page({
   },
 
   goToday() {
-    this.setData({ selectedDate: dateString() }, () => this.loadSchedule())
+    const selectedDate = dateString()
+    this.setData({ selectedDate, calendarMonth: selectedDate.slice(0, 7) }, () => this.loadSchedule())
+  },
+
+  changeMonth(event) {
+    const [year, month] = this.data.calendarMonth.split('-').map(Number)
+    const date = new Date(year, month - 1 + Number(event.currentTarget.dataset.offset), 1)
+    this.setData({ calendarMonth: monthKey(date) }, () => this.loadSchedule())
+  },
+
+  goCurrentMonth() {
+    this.setData({ calendarMonth: monthKey(new Date()) }, () => this.loadSchedule())
+  },
+
+  selectCalendarDay(event) {
+    const selectedDate = event.currentTarget.dataset.date
+    this.setData({
+      selectedDate,
+      calendarMonth: selectedDate.slice(0, 7),
+      currentView: 0,
+      cardTabClass: 'active',
+      timelineTabClass: '',
+      calendarTabClass: ''
+    }, () => {
+      this.loadSchedule()
+      this.measureHeader()
+    })
   },
 
   async complete(event) {

@@ -9,29 +9,38 @@
     </view>
 
     <!-- 时间线 Hero -->
-    <view wx:else class="hero">
+    <view wx:elif="{{currentView === 1}}" class="hero">
       <view class="eyebrow">时间线</view>
       <view class="headline">{{scheduleLabel}}</view>
       <view class="date">共 {{pendingTimeline.length + doneTimeline.length}} 项</view>
     </view>
 
-    <view class="date-nav">
+    <!-- 月历 Hero -->
+    <view wx:else class="hero">
+      <view class="eyebrow">月度安排</view>
+      <view class="headline">{{calendarTitle}}</view>
+      <view class="date">日程与截止任务一目了然</view>
+    </view>
+
+    <view wx:if="{{currentView !== 2}}" class="date-nav">
       <text class="nav-button" data-offset="-1" bindtap="changeDay">‹</text>
       <picker mode="date" value="{{selectedDate}}" bindchange="selectDate">
         <view class="selected-date">{{scheduleLabel}} <text class="calendar">⌄</text></view>
       </picker>
       <text class="nav-button" data-offset="1" bindtap="changeDay">›</text>
     </view>
-    <text wx:if="{{!isToday}}" class="today-link" bindtap="goToday">回到今天</text>
+    <text wx:if="{{currentView !== 2 && !isToday}}" class="today-link" bindtap="goToday">回到今天</text>
 
     <view class="quick-actions">
       <button class="primary" bindtap="addEvent">＋ 添加事项</button>
       <button wx:if="{{currentView === 0}}" class="secondary" bindtap="importClipboard">从微信消息导入</button>
+      <button wx:if="{{currentView === 2}}" class="secondary" bindtap="goCurrentMonth">回到本月</button>
     </view>
 
     <view class="view-switch">
       <text class="switch-tab {{cardTabClass}}" data-view="0" bindtap="switchView">卡片视图</text>
       <text class="switch-tab {{timelineTabClass}}" data-view="1" bindtap="switchView">时间线</text>
+      <text class="switch-tab {{calendarTabClass}}" data-view="2" bindtap="switchView">月历</text>
     </view>
   </view>
 
@@ -251,6 +260,44 @@
           <view class="empty-title">这一天暂无安排</view>
           <view class="empty-copy">点击「添加事项」为这一天安排日程或截止任务吧</view>
         </view>
+      </scroll-view>
+    </swiper-item>
+
+    <!-- 月历视图 -->
+    <swiper-item>
+      <scroll-view scroll-y class="swiper-scroll" style="height: {{swiperHeight}}px" enhanced show-scrollbar="{{false}}">
+        <view class="calendar-month-nav">
+          <text class="calendar-month-button" data-offset="-1" bindtap="changeMonth">‹</text>
+          <view class="calendar-month-title">{{calendarTitle}}</view>
+          <text class="calendar-month-button" data-offset="1" bindtap="changeMonth">›</text>
+        </view>
+
+        <view class="calendar-board">
+          <view class="calendar-weekdays">
+            <text wx:for="{{calendarWeekdays}}" wx:key="*this" class="calendar-weekday">{{item}}</text>
+          </view>
+          <view wx:for="{{calendarWeeks}}" wx:for-item="week" wx:key="key" class="calendar-week">
+            <view wx:for="{{week.days}}" wx:for-item="day" wx:key="key" class="calendar-day {{day.isCurrentMonth ? '' : 'is-other-month'}}" data-date="{{day.key}}" bindtap="selectCalendarDay">
+              <view class="calendar-day-number {{day.isToday ? 'is-today' : ''}} {{day.isSelected ? 'is-selected' : ''}}">{{day.day}}</view>
+              <view class="calendar-dots">
+                <view wx:if="{{day.hasSchedules}}" class="calendar-dot dot-schedule"></view>
+                <view wx:if="{{day.hasDeadlines}}" class="calendar-dot dot-deadline"></view>
+              </view>
+              <text wx:if="{{day.itemCount > 1}}" class="calendar-count">{{day.itemCount}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="calendar-legend">
+          <view class="calendar-legend-item"><view class="calendar-dot dot-schedule"></view><text>日程</text></view>
+          <view class="calendar-legend-item"><view class="calendar-dot dot-deadline"></view><text>截止任务</text></view>
+        </view>
+
+        <view class="calendar-todo-card">
+          <view class="calendar-todo-icon">✓</view>
+          <view><view class="calendar-todo-title">未安排日期的待办</view><view class="calendar-todo-copy">还有 {{calendarTodoCount}} 项待办等待完成</view></view>
+        </view>
+        <view class="calendar-tip">点击日期，即可查看当天的详细安排</view>
       </scroll-view>
     </swiper-item>
   </swiper>

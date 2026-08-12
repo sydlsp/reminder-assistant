@@ -34,7 +34,7 @@
 .secondary { background: #e7eeeb; color: #176b55; }
 
 /* 视图切换 tab */
-.view-switch { display: flex; justify-content: center; gap: 32rpx; margin-bottom: 28rpx; }
+.view-switch { display: flex; justify-content: center; gap: 28rpx; margin-bottom: 28rpx; }
 .switch-tab { color: #84918d; font-size: 26rpx; padding: 4rpx 0; }
 .switch-tab.active { color: #176b55; font-weight: 600; border-bottom: 4rpx solid #176b55; }
 
@@ -148,3 +148,29 @@
 .empty-icon { color: #b6c6c0; font-size: 58rpx; }
 .empty-title { margin-top: 18rpx; color: #30413b; font-size: 30rpx; font-weight: 600; }
 .empty-copy { margin-top: 14rpx; color: #81908a; font-size: 25rpx; line-height: 1.6; }
+
+/* ===== 月历视图 ===== */
+.calendar-month-nav { display: flex; align-items: center; justify-content: space-between; margin: 18rpx 0 22rpx; padding: 10rpx 6rpx; }
+.calendar-month-button { width: 64rpx; color: #176b55; font-size: 50rpx; line-height: 56rpx; text-align: center; }
+.calendar-month-title { color: #23342e; font-size: 30rpx; font-weight: 700; }
+.calendar-board { overflow: hidden; padding: 18rpx 12rpx 14rpx; background: #fff; border: 1rpx solid #eaf0ed; border-radius: 24rpx; box-shadow: 0 8rpx 32rpx rgba(23, 64, 52, .04); }
+.calendar-weekdays, .calendar-week { display: flex; }
+.calendar-weekday { width: 14.285%; padding-bottom: 14rpx; color: #82908b; font-size: 21rpx; text-align: center; }
+.calendar-weekday:nth-child(6), .calendar-weekday:nth-child(7) { color: #b7896b; }
+.calendar-day { position: relative; display: flex; width: 14.285%; height: 88rpx; flex-direction: column; align-items: center; box-sizing: border-box; }
+.calendar-day.is-other-month { opacity: .28; }
+.calendar-day-number { display: flex; width: 48rpx; height: 48rpx; align-items: center; justify-content: center; border-radius: 50%; color: #30413b; font-size: 25rpx; line-height: 1; }
+.calendar-day-number.is-today { color: #176b55; font-weight: 700; box-shadow: inset 0 0 0 2rpx #9bc9bb; }
+.calendar-day-number.is-selected { background: #176b55; color: #fff; box-shadow: none; }
+.calendar-dots { display: flex; gap: 6rpx; min-height: 12rpx; margin-top: 7rpx; }
+.calendar-dot { width: 10rpx; height: 10rpx; border-radius: 50%; }
+.dot-schedule { background: #2b8a6b; }
+.calendar-board .dot-deadline { background: #d88746; }
+.calendar-count { position: absolute; top: -3rpx; right: 10rpx; min-width: 22rpx; height: 22rpx; padding: 0 3rpx; border-radius: 12rpx; background: #e8f2ee; color: #176b55; font-size: 16rpx; line-height: 22rpx; text-align: center; }
+.calendar-legend { display: flex; justify-content: center; gap: 28rpx; margin: 24rpx 0 30rpx; color: #788680; font-size: 22rpx; }
+.calendar-legend-item { display: flex; align-items: center; gap: 8rpx; }
+.calendar-todo-card { display: flex; align-items: center; gap: 18rpx; padding: 24rpx; background: #edf4f0; border-radius: 18rpx; }
+.calendar-todo-icon { display: flex; width: 48rpx; height: 48rpx; align-items: center; justify-content: center; border-radius: 50%; background: #d2e7de; color: #176b55; font-size: 25rpx; font-weight: 700; }
+.calendar-todo-title { color: #30413b; font-size: 26rpx; font-weight: 600; }
+.calendar-todo-copy { margin-top: 5rpx; color: #71827b; font-size: 22rpx; }
+.calendar-tip { margin-top: 24rpx; color: #8a9792; font-size: 22rpx; text-align: center; }
