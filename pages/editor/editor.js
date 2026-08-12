@@ -1,6 +1,6 @@
 const { getEvents, initializeEvents, upsertEvent, deleteEvent, getScheduleConflicts } = require('../../utils/events')
 const { dateString, timeString, displayDate, localDate } = require('../../utils/date')
-const { aiParse } = require('../../utils/aiParser')
+const { aiParse, aiParseEdit } = require('../../utils/aiParser')
 const { registerReminder, cancelReminders } = require('../../utils/reminder')
 
 function timeToMinutes(value) {
@@ -61,6 +61,8 @@ Page({
     voiceProcessing: false,
     voiceTranscript: '',
     voiceHint: '点击开始，说出日期、时间和事项',
+    voiceChangeSummary: '',
+    editorReady: false,
     saving: false,
     showReminderSetup: false,
     savedEventId: '',
@@ -73,10 +75,15 @@ Page({
 
   async onLoad(options) {
     const initialTime = this.data.time
+    const isEdit = Boolean(options.id)
     this.setData({
+      isEdit,
       date: options.date || this.data.date,
       endTime: defaultEndTime(initialTime),
-      endTimeMin: minimumEndTime(initialTime)
+      endTimeMin: minimumEndTime(initialTime),
+      voiceHint: isEdit
+        ? '说出要修改的内容，未提到的字段会保留'
+        : this.data.voiceHint
     })
     this.setupVoiceRecognition()
     try {
@@ -89,9 +96,10 @@ Page({
     if (options.id) {
       this.loadEvent(options.id)
     } else if (options.importClipboard === '1') {
+      this.setData({ editorReady: true })
       this.readClipboard()
     } else {
-      this.setData({ showEditForm: true })
+      this.setData({ showEditForm: true, editorReady: true })
     }
   },
 
@@ -105,6 +113,7 @@ Page({
       this.setData({
         isRecording: true,
         voiceTranscript: '',
+        voiceChangeSummary: '',
         voiceHint: '正在聆听，再次点击即可结束'
       })
     })
@@ -155,8 +164,9 @@ Page({
   },
 
   async startVoiceInput() {
-    if (!this.voiceRecognitionManager || this.data.voiceProcessing) {
+    if (!this.voiceRecognitionManager || !this.data.editorReady || this.data.voiceProcessing) {
       if (!this.voiceRecognitionManager) wx.showToast({ title: '语音功能尚未就绪', icon: 'none' })
+      else if (!this.data.editorReady) wx.showToast({ title: '正在加载事项，请稍候', icon: 'none' })
       return
     }
 
@@ -232,7 +242,7 @@ Page({
           if (authSetting['scope.record'] === false) {
             wx.showModal({
               title: '需要麦克风权限',
-              content: '开启录音权限后，才能使用语音添加事项。',
+              content: `开启录音权限后，才能使用语音${this.data.isEdit ? '修改' : '添加'}事项。`,
               confirmText: '去设置',
               success: ({ confirm }) => {
                 if (!confirm) {
@@ -260,6 +270,11 @@ Page({
   },
 
   async parseVoiceText(text) {
+    if (this.data.isEdit) {
+      await this.parseVoiceEditText(text)
+      return
+    }
+
     this.setData({
       title: text,
       voiceTranscript: text,
@@ -283,6 +298,166 @@ Page({
     } finally {
       this.setData({ voiceProcessing: false })
     }
+  },
+
+  async parseVoiceEditText(text) {
+    const currentEvent = {
+      title: this.data.title,
+      type: this.data.type,
+      date: this.data.date,
+      time: this.data.time,
+      endTime: this.data.endTime,
+      location: this.data.location
+    }
+    this.setData({
+      voiceTranscript: text,
+      voiceChangeSummary: '',
+      voiceProcessing: true,
+      voiceHint: '已转成文字，正在分析要修改的内容…'
+    })
+
+    try {
+      const parsed = await aiParseEdit(text, this.data.date, currentEvent)
+      const { changedFields, notes } = this.applyVoiceEditPatch(parsed)
+
+      if (changedFields.length) {
+        const summary = `已修改：${changedFields.join('、')}`
+        this.setData({
+          voiceChangeSummary: summary,
+          voiceHint: notes.length ? `${summary}；${notes[0]}` : `${summary}，请确认后更新`
+        })
+        wx.showToast({ title: '已合并语音修改', icon: 'success' })
+      } else {
+        const message = parsed.error
+          ? '智能修改暂不可用，原事项未改动'
+          : (notes[0] || '没有识别到明确修改，原事项未改动')
+        this.setData({ voiceHint: message, voiceChangeSummary: '' })
+        wx.showToast({ title: message, icon: 'none' })
+      }
+    } catch (error) {
+      console.warn('[Voice] 修改指令解析失败:', error)
+      this.setData({
+        showEditForm: true,
+        voiceChangeSummary: '',
+        voiceHint: '解析失败，原事项未改动'
+      })
+      wx.showToast({ title: '解析失败，未修改原事项', icon: 'none' })
+    } finally {
+      this.setData({ voiceProcessing: false })
+    }
+  },
+
+  applyVoiceEditPatch(parsed) {
+    const fieldLabels = {
+      title: '事项内容',
+      type: '事务类型',
+      date: '日期',
+      time: this.data.type === 'deadline' ? '截止时间' : '开始时间',
+      endTime: '结束时间',
+      location: '地点'
+    }
+    const allowedFields = new Set(Object.keys(fieldLabels))
+    let fields = Array.isArray(parsed.mentionedFields)
+      ? [...new Set(parsed.mentionedFields.filter(field => allowedFields.has(field)))]
+      : []
+    const changedFields = []
+    const notes = Array.isArray(parsed.warnings) ? [...parsed.warnings] : []
+    const setData = { showEditForm: true }
+
+    let nextType = this.data.type
+    if (fields.includes('type')) {
+      const typeIndex = this.data.typeOptions.findIndex(option => option.value === parsed.suggestedType)
+      if (typeIndex >= 0) {
+        const requestedType = parsed.suggestedType
+        const needsScheduleDetails = this.data.type === 'todo' && requestedType !== 'todo'
+        const hasRequiredDetails = fields.includes('date') && fields.includes('time') && parsed.date && parsed.time
+        const hasInvalidRequestedRange = requestedType === 'event' && fields.includes('time') && fields.includes('endTime') && parsed.time && parsed.endTime && !isEndTimeAfter(normalizeStartTime(parsed.time), parsed.endTime)
+        if ((needsScheduleDetails && !hasRequiredDetails) || hasInvalidRequestedRange) {
+          notes.push(hasInvalidRequestedRange
+            ? '结束时间必须晚于开始时间，事务类型和时间均未修改'
+            : '从待办改为日程或截止事项时，请同时说出日期和时间')
+          fields = fields.filter(field => !['type', 'date', 'time', 'endTime'].includes(field))
+        } else {
+          nextType = requestedType
+          setData.type = nextType
+          setData.typeIndex = typeIndex
+          if (nextType !== this.data.type) changedFields.push(fieldLabels.type)
+        }
+      }
+    }
+
+    if (fields.includes('title') && parsed.title && parsed.title !== this.data.title) {
+      setData.title = parsed.title
+      changedFields.push(fieldLabels.title)
+    }
+    if (fields.includes('location') && parsed.location !== this.data.location) {
+      // 空字符串也是有效补丁，用于“清空地点”。
+      setData.location = parsed.location || ''
+      changedFields.push(fieldLabels.location)
+    }
+
+    const supportsDateTime = nextType === 'event' || nextType === 'deadline'
+    if (!supportsDateTime && fields.some(field => ['date', 'time', 'endTime'].includes(field))) {
+      notes.push('待办不使用日期时间，如需安排时间请同时说“改为日程”或“改为截止事项”')
+    }
+
+    if (supportsDateTime && fields.includes('date') && parsed.date && parsed.date !== this.data.date) {
+      setData.date = parsed.date
+      changedFields.push(fieldLabels.date)
+    }
+
+    if (nextType === 'deadline') {
+      if (fields.includes('time') && parsed.time && parsed.time !== this.data.time) {
+        setData.time = parsed.time
+        changedFields.push('截止时间')
+      }
+      if (fields.includes('endTime')) {
+        notes.push('截止事项没有结束时间，该字段已保留原值')
+      }
+    } else if (nextType === 'event') {
+      const transitioningToEvent = this.data.type !== 'event'
+      const wantsTime = fields.includes('time') && Boolean(parsed.time)
+      const wantsEndTime = fields.includes('endTime') && Boolean(parsed.endTime)
+      const nextTime = wantsTime ? normalizeStartTime(parsed.time) : this.data.time
+      const nextEndTime = wantsEndTime
+        ? parsed.endTime
+        : (transitioningToEvent ? defaultEndTime(nextTime) : this.data.endTime)
+
+      if (transitioningToEvent && !wantsTime && timeToMinutes(nextTime) >= 23 * 60 + 59) {
+        delete setData.type
+        delete setData.typeIndex
+        const typeLabelIndex = changedFields.indexOf(fieldLabels.type)
+        if (typeLabelIndex >= 0) changedFields.splice(typeLabelIndex, 1)
+        notes.push('当前时间无法形成有效日程，请同时说出新的开始时间')
+      } else if (wantsTime && wantsEndTime && !isEndTimeAfter(nextTime, nextEndTime)) {
+        notes.push('结束时间必须晚于开始时间，本次时间修改未应用')
+      } else {
+        if (wantsTime && nextTime !== this.data.time) {
+          setData.time = nextTime
+          changedFields.push('开始时间')
+        }
+        if (wantsEndTime) {
+          if (isEndTimeAfter(nextTime, nextEndTime)) {
+            if (nextEndTime !== this.data.endTime) {
+              setData.endTime = nextEndTime
+              changedFields.push(fieldLabels.endTime)
+            }
+          } else {
+            notes.push('结束时间必须晚于开始时间，已保留原结束时间')
+          }
+        } else if (wantsTime && (transitioningToEvent || !isEndTimeAfter(nextTime, this.data.endTime))) {
+          setData.endTime = defaultEndTime(nextTime)
+          changedFields.push('结束时间（自动设置）')
+          notes.push(transitioningToEvent
+            ? '已将结束时间设为开始时间 1 小时后'
+            : '原结束时间早于新开始时间，已自动顺延 1 小时')
+        }
+        if (wantsTime) setData.endTimeMin = minimumEndTime(nextTime)
+      }
+    }
+
+    this.setData(setData, () => this.buildPreview())
+    return { changedFields, notes }
   },
 
   loadEvent(id) {
@@ -318,11 +493,19 @@ Page({
       reminderIndex: reminderIndex >= 0 ? reminderIndex : 2,
       source: event.source || 'manual',
       originalText: event.originalText || '',
-      location: event.location || ''
+      location: event.location || '',
+      voiceTranscript: '',
+      voiceChangeSummary: '',
+      voiceHint: '说出要修改的内容，未提到的字段会保留',
+      editorReady: true
     }, () => this.buildPreview())
   },
 
   readClipboard() {
+    if (!this.data.editorReady || this.data.isRecording || this.data.voiceProcessing) {
+      wx.showToast({ title: this.data.editorReady ? '请等待语音解析完成' : '正在加载事项，请稍候', icon: 'none' })
+      return
+    }
     this.setData({ loadingClipboard: true, loadingParse: true })
     wx.getClipboardData({
       success: async ({ data }) => {
@@ -344,6 +527,10 @@ Page({
   },
 
   async parseTitle() {
+    if (!this.data.editorReady || this.data.isRecording || this.data.voiceProcessing) {
+      wx.showToast({ title: this.data.editorReady ? '请等待语音解析完成' : '正在加载事项，请稍候', icon: 'none' })
+      return
+    }
     const text = this.data.title.trim()
     if (!text) {
       wx.showToast({ title: '请先输入事项内容', icon: 'none' })
@@ -488,7 +675,16 @@ Page({
   },
 
   async save() {
-    if (this.data.saving) return
+    if (!this.data.editorReady || this.data.saving || this.data.isRecording || this.data.voiceProcessing) {
+      if (!this.data.editorReady) {
+        wx.showToast({ title: '正在加载事项，请稍候', icon: 'none' })
+        return
+      }
+      if (this.data.isRecording || this.data.voiceProcessing) {
+        wx.showToast({ title: '请等待语音解析完成', icon: 'none' })
+      }
+      return
+    }
     const { editId, type, title, date, time, endTime, remindBefore, overdueReminder, isCompleted, source, originalText, location } = this.data
     if (!title.trim()) {
       wx.showToast({ title: '请填写事项内容', icon: 'none' })
@@ -647,6 +843,10 @@ Page({
   noop() {},
 
   removeItem() {
+    if (!this.data.editorReady || this.data.isRecording || this.data.voiceProcessing) {
+      wx.showToast({ title: this.data.editorReady ? '请等待语音解析完成' : '正在加载事项，请稍候', icon: 'none' })
+      return
+    }
     wx.showModal({
       title: '确认删除',
       content: '删除后无法恢复',

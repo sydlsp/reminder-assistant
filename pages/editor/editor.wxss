@@ -17,6 +17,7 @@
 .voice-title { color: #29443b; font-size: 25rpx; font-weight: 650; }
 .voice-hint { margin-top: 5rpx; color: #84918c; font-size: 21rpx; line-height: 1.4; }
 .voice-transcript { margin-top: 9rpx; overflow: hidden; color: #50635c; font-size: 22rpx; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.voice-change-summary { margin-top: 8rpx; color: #176b55; font-size: 22rpx; font-weight: 600; line-height: 1.4; }
 .voice-button { flex-shrink: 0; width: 176rpx; margin: 0; padding: 0; border-radius: 14rpx; background: #176b55; color: #fff; font-size: 23rpx; font-weight: 600; line-height: 68rpx; }
 .voice-button[disabled] { opacity: .58; }
 .voice-card.is-recording .voice-button { background: #d8645b; }

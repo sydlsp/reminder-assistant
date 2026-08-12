@@ -9,17 +9,18 @@
     <view class="label content-label">事项内容</view>
     <textarea class="title-input" placeholder="例如：明天下午3点开会讨论需求" value="{{title}}" maxlength="180" auto-height bindinput="onTitleInput" />
     <view class="parse-row">
-      <text class="parse-btn {{loadingParse ? 'loading' : ''}}" bindtap="parseTitle">{{loadingParse ? '解析中...' : '智能解析'}}</text>
-      <button class="clipboard-btn" loading="{{loadingClipboard}}" bindtap="readClipboard">从微信导入</button>
+      <text class="parse-btn {{!editorReady || loadingParse || isRecording || voiceProcessing ? 'loading' : ''}}" bindtap="parseTitle">{{loadingParse ? '解析中...' : '智能解析'}}</text>
+      <button class="clipboard-btn" loading="{{loadingClipboard}}" disabled="{{!editorReady || isRecording || voiceProcessing}}" bindtap="readClipboard">从微信导入</button>
     </view>
 
-    <view wx:if="{{!isEdit}}" class="voice-card {{isRecording ? 'is-recording' : ''}}">
+    <view class="voice-card {{isRecording ? 'is-recording' : ''}}">
       <view class="voice-copy">
-        <view class="voice-title">语音添加</view>
+        <view class="voice-title">{{isEdit ? '语音修改' : '语音添加'}}</view>
         <view class="voice-hint">{{voiceHint}}</view>
         <view wx:if="{{voiceTranscript}}" class="voice-transcript">{{voiceTranscript}}</view>
+        <view wx:if="{{voiceChangeSummary}}" class="voice-change-summary">{{voiceChangeSummary}}</view>
       </view>
-      <button class="voice-button" loading="{{voiceProcessing}}" disabled="{{loadingParse || loadingClipboard || voiceProcessing}}" bindtap="toggleVoiceInput">
+      <button class="voice-button" loading="{{voiceProcessing}}" disabled="{{!editorReady || loadingParse || loadingClipboard || voiceProcessing}}" bindtap="toggleVoiceInput">
         {{voiceProcessing ? '解析中' : (isRecording ? '结束并解析' : '开始说话')}}
       </button>
       <text wx:if="{{isRecording && !voiceProcessing}}" class="voice-cancel" bindtap="cancelVoiceInput">取消</text>
@@ -107,8 +108,8 @@
 
   <!-- 确认保存 -->
   <block wx:if="{{!showReminderSetup}}">
-    <button wx:if="{{showPreview || showEditForm}}" class="save" bindtap="save" loading="{{saving}}" disabled="{{saving}}">{{saving ? '保存中...' : (isEdit ? '确认更新' : '确认并保存')}}</button>
-    <button wx:if="{{isEdit}}" class="delete-item" bindtap="removeItem">删除此事项</button>
+    <button wx:if="{{showPreview || showEditForm}}" class="save" bindtap="save" loading="{{saving}}" disabled="{{!editorReady || saving || isRecording || voiceProcessing}}">{{saving ? '保存中...' : (isEdit ? '确认更新' : '确认并保存')}}</button>
+    <button wx:if="{{isEdit}}" class="delete-item" bindtap="removeItem" disabled="{{!editorReady || isRecording || voiceProcessing}}">删除此事项</button>
   </block>
 
   <view wx:if="{{showReminderSetup}}" class="reminder-modal-mask">
