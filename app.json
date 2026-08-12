@@ -10,6 +10,11 @@
     "backgroundColor": "#F7F8FA",
     "backgroundTextStyle": "light"
   },
+  "permission": {
+    "scope.record": {
+      "desc": "用于语音输入并自动解析日程事项"
+    }
+  },
   "style": "v2",
   "sitemapLocation": "sitemap.json"
 }

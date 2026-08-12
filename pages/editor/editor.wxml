@@ -1,7 +1,7 @@
 <view class="page">
   <view class="intro">
     <view class="title">{{isEdit ? '编辑事项' : '添加一件要记住的事'}}</view>
-    <view class="hint">{{isEdit ? '修改后确认保存。' : '输入内容后点击智能解析，或从微信消息导入。'}}</view>
+    <view class="hint">{{isEdit ? '修改后确认保存。' : '可以输入文字、导入微信消息，或直接说出安排。'}}</view>
   </view>
 
   <!-- 输入区 -->
@@ -11,6 +11,18 @@
     <view class="parse-row">
       <text class="parse-btn {{loadingParse ? 'loading' : ''}}" bindtap="parseTitle">{{loadingParse ? '解析中...' : '智能解析'}}</text>
       <button class="clipboard-btn" loading="{{loadingClipboard}}" bindtap="readClipboard">从微信导入</button>
+    </view>
+
+    <view wx:if="{{!isEdit}}" class="voice-card {{isRecording ? 'is-recording' : ''}}">
+      <view class="voice-copy">
+        <view class="voice-title">语音添加</view>
+        <view class="voice-hint">{{voiceHint}}</view>
+        <view wx:if="{{voiceTranscript}}" class="voice-transcript">{{voiceTranscript}}</view>
+      </view>
+      <button class="voice-button" loading="{{voiceProcessing}}" disabled="{{loadingParse || loadingClipboard || voiceProcessing}}" bindtap="toggleVoiceInput">
+        {{voiceProcessing ? '解析中' : (isRecording ? '结束并解析' : '开始说话')}}
+      </button>
+      <text wx:if="{{isRecording && !voiceProcessing}}" class="voice-cancel" bindtap="cancelVoiceInput">取消</text>
     </view>
   </view>
 

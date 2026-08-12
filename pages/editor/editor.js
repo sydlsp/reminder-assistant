@@ -57,6 +57,10 @@ Page({
     location: '',
     loadingClipboard: false,
     loadingParse: false,
+    isRecording: false,
+    voiceProcessing: false,
+    voiceTranscript: '',
+    voiceHint: '点击开始，说出日期、时间和事项',
     saving: false,
     showReminderSetup: false,
     savedEventId: '',
@@ -74,6 +78,7 @@ Page({
       endTime: defaultEndTime(initialTime),
       endTimeMin: minimumEndTime(initialTime)
     })
+    this.setupVoiceRecognition()
     try {
       await initializeEvents()
     } catch (err) {
@@ -87,6 +92,196 @@ Page({
       this.readClipboard()
     } else {
       this.setData({ showEditForm: true })
+    }
+  },
+
+  setupVoiceRecognition() {
+    if (!wx.getRecorderManager) {
+      this.setData({ voiceHint: '当前微信版本不支持语音录制' })
+      return
+    }
+    const manager = wx.getRecorderManager()
+    manager.onStart(() => {
+      this.setData({
+        isRecording: true,
+        voiceTranscript: '',
+        voiceHint: '正在聆听，再次点击即可结束'
+      })
+    })
+    manager.onStop(({ tempFilePath, fileSize } = {}) => {
+      const shouldDiscard = this.discardVoiceResult
+      this.discardVoiceResult = false
+      this.setData({ isRecording: false })
+
+      if (shouldDiscard) {
+        this.setData({
+          voiceProcessing: false,
+          voiceTranscript: '',
+          voiceHint: '已取消，点击可重新开始'
+        })
+        return
+      }
+      if (!tempFilePath || !fileSize) {
+        this.setData({ voiceProcessing: false, voiceHint: '录音内容为空，请再试一次' })
+        wx.showToast({ title: '没有录到声音', icon: 'none' })
+        return
+      }
+      if (fileSize > 2 * 1024 * 1024) {
+        this.setData({ voiceProcessing: false, voiceHint: '录音文件过大，请缩短后重试' })
+        wx.showToast({ title: '录音时间过长', icon: 'none' })
+        return
+      }
+      this.recognizeVoiceFile(tempFilePath)
+    })
+    manager.onError((error) => {
+      console.warn('[Voice] 录音失败:', error)
+      this.discardVoiceResult = false
+      this.setData({
+        isRecording: false,
+        voiceProcessing: false,
+        voiceHint: '录音失败，请检查麦克风权限'
+      })
+      wx.showToast({ title: '录音失败', icon: 'none' })
+    })
+    this.voiceRecognitionManager = manager
+  },
+
+  toggleVoiceInput() {
+    if (this.data.isRecording) {
+      this.stopVoiceInput()
+      return
+    }
+    this.startVoiceInput()
+  },
+
+  async startVoiceInput() {
+    if (!this.voiceRecognitionManager || this.data.voiceProcessing) {
+      if (!this.voiceRecognitionManager) wx.showToast({ title: '语音功能尚未就绪', icon: 'none' })
+      return
+    }
+
+    const allowed = await this.ensureRecordPermission()
+    if (!allowed) return
+    this.discardVoiceResult = false
+    try {
+      this.voiceRecognitionManager.start({
+        duration: 60000,
+        sampleRate: 16000,
+        numberOfChannels: 1,
+        encodeBitRate: 48000,
+        format: 'mp3',
+        frameSize: 50
+      })
+    } catch (error) {
+      console.warn('[Voice] 无法开始录音:', error)
+      this.setData({ isRecording: false, voiceHint: '无法开始录音，请稍后重试' })
+      wx.showToast({ title: '无法开始录音', icon: 'none' })
+    }
+  },
+
+  stopVoiceInput() {
+    if (!this.voiceRecognitionManager || !this.data.isRecording) return
+    this.setData({ voiceProcessing: true, voiceHint: '正在识别语音…' })
+    this.voiceRecognitionManager.stop()
+  },
+
+  cancelVoiceInput() {
+    if (!this.voiceRecognitionManager || !this.data.isRecording) return
+    this.discardVoiceResult = true
+    this.voiceRecognitionManager.stop()
+  },
+
+  recognizeVoiceFile(tempFilePath) {
+    this.setData({ voiceProcessing: true, voiceHint: '正在将语音转成文字…' })
+    const fs = wx.getFileSystemManager()
+    fs.readFile({
+      filePath: tempFilePath,
+      encoding: 'base64',
+      success: ({ data }) => {
+        wx.cloud.callFunction({
+          name: 'speechToText',
+          data: { audioBase64: data, voiceFormat: 'mp3' }
+        }).then(({ result }) => {
+          if (!result || result.error) throw new Error(result?.error || '语音识别没有返回结果')
+          const text = (result.text || '').trim()
+          if (!text) throw new Error('没有识别到语音内容')
+          this.setData({ voiceTranscript: text })
+          return this.parseVoiceText(text)
+        }).catch((error) => {
+          console.warn('[Voice] 语音转文字失败:', error)
+          this.setData({ voiceProcessing: false, voiceHint: error.message || '语音识别失败，请稍后重试' })
+          wx.showToast({ title: '语音识别失败', icon: 'none' })
+        })
+      },
+      fail: (error) => {
+        console.warn('[Voice] 无法读取录音文件:', error)
+        this.setData({ voiceProcessing: false, voiceHint: '无法读取录音，请重试' })
+        wx.showToast({ title: '无法读取录音', icon: 'none' })
+      }
+    })
+  },
+
+  ensureRecordPermission() {
+    return new Promise((resolve) => {
+      wx.getSetting({
+        success: ({ authSetting }) => {
+          if (authSetting['scope.record']) {
+            resolve(true)
+            return
+          }
+          if (authSetting['scope.record'] === false) {
+            wx.showModal({
+              title: '需要麦克风权限',
+              content: '开启录音权限后，才能使用语音添加事项。',
+              confirmText: '去设置',
+              success: ({ confirm }) => {
+                if (!confirm) {
+                  resolve(false)
+                  return
+                }
+                wx.openSetting({
+                  success: ({ authSetting: nextSetting }) => resolve(Boolean(nextSetting['scope.record'])),
+                  fail: () => resolve(false)
+                })
+              },
+              fail: () => resolve(false)
+            })
+            return
+          }
+          wx.authorize({
+            scope: 'scope.record',
+            success: () => resolve(true),
+            fail: () => resolve(false)
+          })
+        },
+        fail: () => resolve(false)
+      })
+    })
+  },
+
+  async parseVoiceText(text) {
+    this.setData({
+      title: text,
+      voiceTranscript: text,
+      voiceProcessing: true,
+      voiceHint: '已转成文字，正在智能解析…'
+    })
+    try {
+      const parsed = await aiParse(text, this.data.date)
+      this.applyParse(parsed, { source: 'voice', originalText: text })
+      this.setData({
+        voiceHint: parsed.recognized ? '解析完成，请确认后保存' : '未识别到时间，请手动确认'
+      })
+      wx.showToast({
+        title: parsed.recognized ? '语音解析完成' : '已转为待办，请确认',
+        icon: parsed.recognized ? 'success' : 'none'
+      })
+    } catch (error) {
+      console.warn('[Voice] 智能解析失败:', error)
+      this.setData({ showEditForm: true, voiceHint: '解析失败，已保留识别文字' })
+      wx.showToast({ title: '解析失败，请手动填写', icon: 'none' })
+    } finally {
+      this.setData({ voiceProcessing: false })
     }
   },
 
@@ -273,6 +468,20 @@ Page({
   },
   onOverdueReminderChange(event) {
     this.setData({ overdueReminder: event.detail.value })
+  },
+
+  onHide() {
+    if (this.data.isRecording) {
+      this.discardVoiceResult = true
+      this.voiceRecognitionManager?.stop()
+    }
+  },
+
+  onUnload() {
+    if (this.data.isRecording) {
+      this.discardVoiceResult = true
+      this.voiceRecognitionManager?.stop()
+    }
   },
   onCompletedChange(event) {
     this.setData({ isCompleted: event.detail.value })
