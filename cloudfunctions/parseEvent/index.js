@@ -22,11 +22,15 @@ function shanghaiDateContext(now = new Date()) {
   }
 }
 
-function buildSystemPrompt() {
-  const { date, weekday } = shanghaiDateContext()
+function buildSystemPrompt(baseDate) {
+  const currentContext = shanghaiDateContext()
+  const selectedContext = /^\d{4}-\d{2}-\d{2}$/.test(baseDate || '')
+    ? shanghaiDateContext(new Date(`${baseDate}T00:00:00+08:00`))
+    : currentContext
+  const { date, weekday } = selectedContext
   return `你是一个日程解析助手。根据用户输入的自然语言文本，提取事项信息并只返回严格 JSON。
 
-当前北京时间：${date}（星期${weekday}）。相对日期必须基于此日期计算。
+当前计划基准日：${date}（星期${weekday}）。相对日期必须基于此日期计算，即使真实今天不同也不能使用真实今天。
 
 分类定义：
 - todo：没有明确日期和时间的待办
@@ -170,13 +174,14 @@ function parseModelContent(content) {
 
 exports.main = async (event) => {
   const text = typeof event.text === 'string' ? event.text.trim() : ''
+  const baseDate = typeof event.baseDate === 'string' ? event.baseDate : ''
   if (!text) {
     return { title: '', date: '', time: '', endTime: '', location: '', suggestedType: 'todo', recognized: false, warnings: [] }
   }
 
   try {
     const response = await deepseekRequest([
-      { role: 'system', content: buildSystemPrompt() },
+      { role: 'system', content: buildSystemPrompt(baseDate) },
       { role: 'user', content: text }
     ])
     const content = response?.choices?.[0]?.message?.content

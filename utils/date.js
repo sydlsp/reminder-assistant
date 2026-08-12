@@ -54,8 +54,10 @@ function normalizeChineseTime(text) {
   })
 }
 
-function parseClipboard(text) {
-  const now = new Date()
+function parseClipboard(text, baseDate) {
+  const now = /^\d{4}-\d{2}-\d{2}$/.test(baseDate || '')
+    ? localDate(baseDate, '00:00')
+    : new Date()
   const raw = normalizeChineseTime(text.replace(/\s+/g, ' ').trim())
   const parsed = new Date(now)
   let matchedDate = false
@@ -157,7 +159,7 @@ function parseClipboard(text) {
 
   // 下午2点到4点 / 14点到16点 / 上午9点到11点半
   if (!matchedTime) {
-    const tr = raw.match(/(?:上午|下午|晚上|中午)?\s*(\d{1,2})[点:：]\s*(半)?\s*[-~至到]\s*(?:上午|下午|晚上|中午)?\s*(\d{1,2})[点:：]\s*(半)?/)
+    const tr = raw.match(/(?:上午|下午|晚上|中午)?\s*(\d{1,2})\s*[点:：]\s*(半)?\s*[-~至到]\s*(?:上午|下午|晚上|中午)?\s*(\d{1,2})\s*[点:：]\s*(半)?/)
     if (tr) {
       hour = Number(tr[1])
       minute = tr[2] ? 30 : 0
@@ -173,7 +175,7 @@ function parseClipboard(text) {
 
   // 单个时间：上午/下午/晚上/中午 X点/X:XX
   if (!matchedTime) {
-    const tm = raw.match(/(?:上午|下午|晚上|中午)?\s*(\d{1,2})[点:：](?:(\d{2})|(半))?/)
+    const tm = raw.match(/(?:上午|下午|晚上|中午)?\s*(\d{1,2})\s*[点:：]\s*(?:(\d{2})|(半))?/)
     if (tm) {
       hour = Number(tm[1])
       minute = tm[3] ? 30 : Number(tm[2] || 0)

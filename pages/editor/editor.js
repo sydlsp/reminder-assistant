@@ -102,7 +102,7 @@ Page({
           wx.showToast({ title: '剪贴板没有文字', icon: 'none' })
           return
         }
-        const parsed = await aiParse(data)
+        const parsed = await aiParse(data, this.data.date)
         this.applyParse(parsed, { source: 'clipboard', originalText: data })
         if (parsed.source === 'fallback') {
           wx.showToast({ title: '智能服务不可用，已规则解析', icon: 'none' })
@@ -122,7 +122,7 @@ Page({
       return
     }
     this.setData({ loadingParse: true })
-    const parsed = await aiParse(text)
+    const parsed = await aiParse(text, this.data.date)
     this.setData({ loadingParse: false })
     this.applyParse(parsed, { source: 'manual' })
     if (parsed.source === 'fallback') {
@@ -217,6 +217,10 @@ Page({
     const { editId, type, title, date, time, endTime, remindBefore, overdueReminder, isCompleted, source, originalText, location } = this.data
     if (!title.trim()) {
       wx.showToast({ title: '请填写事项内容', icon: 'none' })
+      return
+    }
+    if (type === 'event' && localDate(date, endTime) <= localDate(date, time)) {
+      wx.showToast({ title: '结束时间必须晚于开始时间', icon: 'none' })
       return
     }
 
