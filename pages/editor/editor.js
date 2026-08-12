@@ -3,6 +3,32 @@ const { dateString, timeString, displayDate, localDate } = require('../../utils/
 const { aiParse } = require('../../utils/aiParser')
 const { registerReminder, cancelReminders } = require('../../utils/reminder')
 
+function timeToMinutes(value) {
+  const [hour, minute] = (value || '00:00').split(':').map(Number)
+  return hour * 60 + minute
+}
+
+function normalizeStartTime(value) {
+  return timeToMinutes(value) >= 23 * 60 + 59 ? '23:58' : value
+}
+
+function minutesToTime(value) {
+  const minutes = Math.min(Math.max(value, 0), 23 * 60 + 59)
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+}
+
+function minimumEndTime(startTime) {
+  return minutesToTime(timeToMinutes(startTime) + 1)
+}
+
+function defaultEndTime(startTime) {
+  return minutesToTime(timeToMinutes(startTime) + 60)
+}
+
+function isEndTimeAfter(startTime, endTime) {
+  return timeToMinutes(endTime) > timeToMinutes(startTime)
+}
+
 Page({
   data: {
     editId: '',
@@ -21,6 +47,7 @@ Page({
     date: dateString(),
     time: timeString(),
     endTime: timeString(),
+    endTimeMin: '00:01',
     remindBefore: 10,
     overdueReminder: true,
     reminderOptions: [0,1,5, 10, 15, 30, 60],
@@ -41,7 +68,12 @@ Page({
   },
 
   async onLoad(options) {
-    if (options.date) this.setData({ date: options.date })
+    const initialTime = this.data.time
+    this.setData({
+      date: options.date || this.data.date,
+      endTime: defaultEndTime(initialTime),
+      endTimeMin: minimumEndTime(initialTime)
+    })
     try {
       await initializeEvents()
     } catch (err) {
@@ -69,7 +101,7 @@ Page({
 
     const d = event.type === 'event' && start ? dateString(start)
       : event.type === 'deadline' && dl ? dateString(dl) : this.data.date
-    const t = start ? timeString(start) : dl ? timeString(dl) : timeString()
+    const t = start ? normalizeStartTime(timeString(start)) : dl ? timeString(dl) : timeString()
 
     this.setData({
       editId: id,
@@ -84,7 +116,8 @@ Page({
       title: event.title || '',
       date: d,
       time: t,
-      endTime: end ? timeString(end) : timeString(),
+      endTime: end && isEndTimeAfter(t, timeString(end)) ? timeString(end) : defaultEndTime(t),
+      endTimeMin: minimumEndTime(t),
       remindBefore: event.remindBefore ?? 10,
       overdueReminder: event.overdueReminder !== false,
       reminderIndex: reminderIndex >= 0 ? reminderIndex : 2,
@@ -136,17 +169,25 @@ Page({
 
   applyParse(parsed, extra) {
     const typeIndex = this.data.typeOptions.findIndex(o => o.value === parsed.suggestedType)
+    const parsedStartTime = normalizeStartTime(parsed.time || this.data.time)
+    const parsedEndTime = parsed.endTime || this.data.endTime
+    const validParsedEndTime = isEndTimeAfter(parsedStartTime, parsedEndTime)
     const setData = {
       title: parsed.title,
       date: parsed.date,
-      time: parsed.time,
+      time: parsedStartTime,
       type: parsed.suggestedType,
       typeIndex: typeIndex >= 0 ? typeIndex : 0,
       showPreview: true,
       showEditForm: false,
       ...extra
     }
-    if (parsed.endTime) setData.endTime = parsed.endTime
+    if (parsed.suggestedType === 'event') {
+      setData.endTime = validParsedEndTime ? parsedEndTime : defaultEndTime(parsedStartTime)
+      setData.endTimeMin = minimumEndTime(parsedStartTime)
+    } else if (parsed.endTime) {
+      setData.endTime = parsed.endTime
+    }
     if (parsed.location) setData.location = parsed.location
     this.setData(setData, () => this.buildPreview())
   },
@@ -182,10 +223,20 @@ Page({
 
   onTypeChange(event) {
     const typeIndex = Number(event.detail.value)
-    this.setData({
+    const type = this.data.typeOptions[typeIndex].value
+    const setData = {
       typeIndex,
-      type: this.data.typeOptions[typeIndex].value
-    }, () => this.buildPreview())
+      type
+    }
+    if (type === 'event') {
+      const startTime = normalizeStartTime(this.data.time)
+      setData.time = startTime
+      setData.endTimeMin = minimumEndTime(startTime)
+      if (!isEndTimeAfter(startTime, this.data.endTime)) {
+        setData.endTime = defaultEndTime(startTime)
+      }
+    }
+    this.setData(setData, () => this.buildPreview())
   },
 
   onTitleInput(event) { this.setData({ title: event.detail.value }) },
@@ -193,10 +244,25 @@ Page({
     this.setData({ date: event.detail.value }, () => this.buildPreview())
   },
   onTimeChange(event) {
-    this.setData({ time: event.detail.value }, () => this.buildPreview())
+    const time = normalizeStartTime(event.detail.value)
+    const setData = { time }
+    if (this.data.type === 'event') {
+      setData.endTimeMin = minimumEndTime(time)
+      if (!isEndTimeAfter(time, this.data.endTime)) {
+        setData.endTime = defaultEndTime(time)
+        wx.showToast({ title: '结束时间已自动顺延 1 小时', icon: 'none' })
+      }
+    }
+    this.setData(setData, () => this.buildPreview())
   },
   onEndTimeChange(event) {
-    this.setData({ endTime: event.detail.value }, () => this.buildPreview())
+    const endTime = event.detail.value
+    if (this.data.type === 'event' && !isEndTimeAfter(this.data.time, endTime)) {
+      this.setData({ endTime: defaultEndTime(this.data.time) }, () => this.buildPreview())
+      wx.showToast({ title: '结束时间已恢复为开始时间 1 小时后', icon: 'none' })
+      return
+    }
+    this.setData({ endTime }, () => this.buildPreview())
   },
   onReminderChange(event) {
     const reminderIndex = Number(event.detail.value)

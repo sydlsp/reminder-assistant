@@ -57,11 +57,11 @@
       <view class="form-row">
         <view class="field">
           <view class="label">开始时间</view>
-          <picker mode="time" value="{{time}}" bindchange="onTimeChange"><view class="picker">{{time}}</view></picker>
+          <picker mode="time" value="{{time}}" end="23:58" bindchange="onTimeChange"><view class="picker">{{time}}</view></picker>
         </view>
         <view class="field">
           <view class="label">结束时间</view>
-          <picker mode="time" value="{{endTime}}" bindchange="onEndTimeChange"><view class="picker">{{endTime}}</view></picker>
+          <picker mode="time" value="{{endTime}}" start="{{endTimeMin}}" bindchange="onEndTimeChange"><view class="picker">{{endTime}}</view></picker>
         </view>
       </view>
     </block>
