@@ -108,9 +108,12 @@ Page({
   measureHeader() {
     const query = wx.createSelectorQuery()
     query.select('.header-area').boundingClientRect()
+    query.select('.bottom-nav-shell').boundingClientRect()
     query.exec((res) => {
-      if (res[0]) {
-        const swiperHeight = this.data.pageHeight - res[0].height
+      const headerRect = res[0]
+      const bottomNavRect = res[1]
+      if (headerRect && bottomNavRect) {
+        const swiperHeight = this.data.pageHeight - headerRect.height - bottomNavRect.height
         if (swiperHeight > 0) {
           this.setData({ swiperHeight })
         }
@@ -391,15 +394,8 @@ Page({
     const selectedDate = event.currentTarget.dataset.date
     this.setData({
       selectedDate,
-      calendarMonth: selectedDate.slice(0, 7),
-      currentView: 0,
-      cardTabClass: 'active',
-      timelineTabClass: '',
-      calendarTabClass: ''
-    }, () => {
-      this.loadSchedule()
-      this.measureHeader()
-    })
+      calendarMonth: selectedDate.slice(0, 7)
+    }, () => this.loadSchedule())
   },
 
   async complete(event) {

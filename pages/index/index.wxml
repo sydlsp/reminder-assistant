@@ -37,11 +37,6 @@
       <button wx:if="{{currentView === 2}}" class="secondary" bindtap="goCurrentMonth">回到本月</button>
     </view>
 
-    <view class="view-switch">
-      <text class="switch-tab {{cardTabClass}}" data-view="0" bindtap="switchView">卡片视图</text>
-      <text class="switch-tab {{timelineTabClass}}" data-view="1" bindtap="switchView">时间线</text>
-      <text class="switch-tab {{calendarTabClass}}" data-view="2" bindtap="switchView">月历</text>
-    </view>
   </view>
 
   <!-- ===== Swiper 内容区 ===== -->
@@ -297,8 +292,26 @@
           <view class="calendar-todo-icon">✓</view>
           <view><view class="calendar-todo-title">未安排日期的待办</view><view class="calendar-todo-copy">还有 {{calendarTodoCount}} 项待办等待完成</view></view>
         </view>
-        <view class="calendar-tip">点击日期，即可查看当天的详细安排</view>
+        <view class="calendar-tip">点击日期选中；切换到底部「日程」查看详细安排</view>
       </scroll-view>
     </swiper-item>
   </swiper>
+
+  <!-- ===== 底部视图导航 ===== -->
+  <view class="bottom-nav-shell">
+    <view class="bottom-nav">
+      <view class="bottom-nav-item {{cardTabClass}}" data-view="0" bindtap="switchView">
+        <view class="bottom-nav-icon">日</view>
+        <text class="bottom-nav-label">日程</text>
+      </view>
+      <view class="bottom-nav-item {{timelineTabClass}}" data-view="1" bindtap="switchView">
+        <view class="bottom-nav-icon">时</view>
+        <text class="bottom-nav-label">时间线</text>
+      </view>
+      <view class="bottom-nav-item {{calendarTabClass}}" data-view="2" bindtap="switchView">
+        <view class="bottom-nav-icon">月</view>
+        <text class="bottom-nav-label">月历</text>
+      </view>
+    </view>
+  </view>
 </view>

@@ -15,7 +15,9 @@
 }
 
 .swiper-scroll {
+  width: 100%;
   padding: 0 32rpx 80rpx;
+  box-sizing: border-box;
 }
 
 /* ===== 共享头部 ===== */
@@ -33,10 +35,49 @@
 .primary { background: #176b55; color: #fff; }
 .secondary { background: #e7eeeb; color: #176b55; }
 
-/* 视图切换 tab */
-.view-switch { display: flex; justify-content: center; gap: 28rpx; margin-bottom: 28rpx; }
-.switch-tab { color: #84918d; font-size: 26rpx; padding: 4rpx 0; }
-.switch-tab.active { color: #176b55; font-weight: 600; border-bottom: 4rpx solid #176b55; }
+/* ===== 底部视图导航 ===== */
+.bottom-nav-shell {
+  z-index: 20;
+  flex-shrink: 0;
+  padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #e8eeeb;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 -8rpx 28rpx rgba(23, 64, 52, .05);
+}
+.bottom-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+.bottom-nav-item {
+  display: flex;
+  width: 30%;
+  min-height: 82rpx;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #89958f;
+}
+.bottom-nav-icon {
+  display: flex;
+  width: 48rpx;
+  height: 40rpx;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14rpx;
+  background: transparent;
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+.bottom-nav-label {
+  margin-top: 7rpx;
+  font-size: 21rpx;
+  line-height: 1;
+}
+.bottom-nav-item.active { color: #176b55; }
+.bottom-nav-item.active .bottom-nav-icon { background: #dfeee8; }
+.bottom-nav-item.active .bottom-nav-label { font-weight: 600; }
 
 /* ===== 卡片视图 ===== */
 .section { margin-bottom: 48rpx; }
