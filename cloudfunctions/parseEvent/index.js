@@ -6,7 +6,6 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const DEEPSEEK_HOST = 'api.deepseek.com'
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || ''
 const VALID_TYPES = new Set(['todo', 'event', 'deadline'])
-const EDIT_FIELDS = new Set(['title', 'type', 'date', 'time', 'endTime', 'location'])
 
 function shanghaiDateContext(now = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -49,49 +48,6 @@ function buildSystemPrompt(baseDate) {
 
 只返回 JSON：
 {"title":"事项标题","date":"YYYY-MM-DD或空","time":"HH:mm或空","endTime":"HH:mm或空","location":"地点或空","suggestedType":"todo|event|deadline","recognized":true|false}`
-}
-
-function buildEditSystemPrompt(baseDate, currentEvent = {}) {
-  const currentContext = shanghaiDateContext()
-  const selectedContext = /^\d{4}-\d{2}-\d{2}$/.test(baseDate || '')
-    ? shanghaiDateContext(new Date(`${baseDate}T00:00:00+08:00`))
-    : currentContext
-  const { date, weekday } = selectedContext
-  const safeCurrentEvent = {
-    title: typeof currentEvent.title === 'string' ? currentEvent.title.slice(0, 180) : '',
-    type: VALID_TYPES.has(currentEvent.type) ? currentEvent.type : 'todo',
-    date: typeof currentEvent.date === 'string' ? currentEvent.date : '',
-    time: typeof currentEvent.time === 'string' ? currentEvent.time : '',
-    endTime: typeof currentEvent.endTime === 'string' ? currentEvent.endTime : '',
-    location: typeof currentEvent.location === 'string' ? currentEvent.location.slice(0, 50) : ''
-  }
-
-  return `你是一个日程修改指令解析助手。用户正在修改已有事项，你只提取本次语音明确要求修改的字段，并只返回严格 JSON。
-
-当前计划基准日：${date}（星期${weekday}）。相对日期必须基于此日期计算，即使真实今天不同也不能使用真实今天。
-当前事项（仅用于理解上下文，绝不能把未提及字段复制到结果中）：${JSON.stringify(safeCurrentEvent)}
-
-可修改字段：
-- title：事项标题
-- type：事项类型，对应结果中的 suggestedType，取 todo、event、deadline
-- date：日期，YYYY-MM-DD
-- time：开始时间或截止时间，HH:mm
-- endTime：日程结束时间，HH:mm
-- location：地点
-
-严格规则：
-1. mentionedFields 只列出用户本次明确提到要修改的字段；未提到的字段必须返回空字符串且不得出现在 mentionedFields 中。
-2. “改到明天下午三点”表示修改 date 和 time；“开始时间改为三点”只修改 time；“结束时间改为五点”只修改 endTime。
-   “截止时间改为五点”或“截止到五点”修改的是 time，不是 endTime；“三点到五点”同时修改 time 和 endTime。
-3. 只有用户明确说“标题/事项内容/名称改为……”时才修改 title。普通修改指令中的其他文字不能被当成新标题。
-4. 只有用户明确要求改为待办、日程或截止事项时才修改 type。
-5. “地点改为复旦大学”修改 location；“清空/删除地点”时 location 返回空字符串，但仍须包含 location。
-6. 不能因为新时间和旧类型看起来不匹配，就擅自修改 type；字段间有效性由前端校验。
-7. 不要返回当前事项中未修改的旧值。
-8. “不要改/别改/保持不变”的字段不是修改字段，不能出现在 mentionedFields 中。
-
-只返回 JSON：
-{"title":"新标题或空","date":"YYYY-MM-DD或空","time":"HH:mm或空","endTime":"HH:mm或空","location":"新地点或空","suggestedType":"todo|event|deadline或空","mentionedFields":["明确修改的字段"],"recognized":true|false}`
 }
 
 function deepseekRequest(messages) {
@@ -207,63 +163,6 @@ function normalizeResult(raw, fallbackTitle) {
   }
 }
 
-function normalizeEditResult(raw) {
-  const warnings = []
-  const mentionedFields = Array.isArray(raw.mentionedFields)
-    ? [...new Set(raw.mentionedFields.filter(field => EDIT_FIELDS.has(field)))]
-    : []
-  const result = {
-    title: '',
-    date: '',
-    time: '',
-    endTime: '',
-    location: '',
-    suggestedType: '',
-    mentionedFields,
-    recognized: false,
-    warnings
-  }
-
-  const removeField = (field, message) => {
-    const index = result.mentionedFields.indexOf(field)
-    if (index >= 0) result.mentionedFields.splice(index, 1)
-    if (message) warnings.push(message)
-  }
-
-  if (result.mentionedFields.includes('title')) {
-    if (typeof raw.title === 'string' && raw.title.trim()) {
-      result.title = raw.title.trim().slice(0, 180)
-    } else {
-      removeField('title', '未识别到有效的新标题，已保留原标题')
-    }
-  }
-  if (result.mentionedFields.includes('type')) {
-    if (VALID_TYPES.has(raw.suggestedType)) {
-      result.suggestedType = raw.suggestedType
-    } else {
-      removeField('type', '未识别到有效的事项类型，已保留原类型')
-    }
-  }
-  if (result.mentionedFields.includes('date')) {
-    result.date = normalizeDate(raw.date, warnings)
-    if (!result.date) removeField('date')
-  }
-  if (result.mentionedFields.includes('time')) {
-    result.time = normalizeTime(raw.time, warnings, '开始或截止时间')
-    if (!result.time) removeField('time')
-  }
-  if (result.mentionedFields.includes('endTime')) {
-    result.endTime = normalizeTime(raw.endTime, warnings, '结束时间')
-    if (!result.endTime) removeField('endTime')
-  }
-  if (result.mentionedFields.includes('location')) {
-    result.location = typeof raw.location === 'string' ? raw.location.trim().slice(0, 50) : ''
-  }
-
-  result.recognized = result.mentionedFields.length > 0
-  return result
-}
-
 function parseModelContent(content) {
   const cleaned = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
   const parsed = JSON.parse(cleaned)
@@ -276,44 +175,20 @@ function parseModelContent(content) {
 exports.main = async (event) => {
   const text = typeof event.text === 'string' ? event.text.trim() : ''
   const baseDate = typeof event.baseDate === 'string' ? event.baseDate : ''
-  const mode = event.mode === 'edit' ? 'edit' : 'create'
   if (!text) {
-    if (mode === 'edit') {
-      return { title: '', date: '', time: '', endTime: '', location: '', suggestedType: '', mentionedFields: [], recognized: false, warnings: [] }
-    }
     return { title: '', date: '', time: '', endTime: '', location: '', suggestedType: 'todo', recognized: false, warnings: [] }
   }
 
   try {
     const response = await deepseekRequest([
-      {
-        role: 'system',
-        content: mode === 'edit'
-          ? buildEditSystemPrompt(baseDate, event.currentEvent)
-          : buildSystemPrompt(baseDate)
-      },
+      { role: 'system', content: buildSystemPrompt(baseDate) },
       { role: 'user', content: text }
     ])
     const content = response?.choices?.[0]?.message?.content
     if (!content) throw new Error('DeepSeek 没有返回解析结果')
-    const parsed = parseModelContent(content)
-    return mode === 'edit' ? normalizeEditResult(parsed) : normalizeResult(parsed, text)
+    return normalizeResult(parseModelContent(content), text)
   } catch (err) {
     console.error('[parseEvent] DeepSeek 解析失败:', err.message)
-    if (mode === 'edit') {
-      return {
-        title: '',
-        date: '',
-        time: '',
-        endTime: '',
-        location: '',
-        suggestedType: '',
-        mentionedFields: [],
-        recognized: false,
-        warnings: [],
-        error: err.message
-      }
-    }
     return {
       title: text,
       date: '',
